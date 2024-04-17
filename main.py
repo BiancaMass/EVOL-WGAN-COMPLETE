@@ -5,7 +5,7 @@ from src.utils.image_utils.data_loader_MNIST import dataloader_mnist
 from src.evolutionary import QES_GAN as qes_gan
 
 import configs.general_configs as general_configs
-import configs.config_escqwgan as es_configs
+import configs.config_evol as es_configs
 import configs.config_gan as gan_config
 
 
@@ -45,6 +45,7 @@ def main():
 
     # Params just for evol
     evol_batch_size = es_configs.EVOL_BATCH_SIZE
+    evol_n_bacthes = es_configs.EVOL_N_BATCHES
     n_children = es_configs.N_CHILDREN
     n_max_evaluations = es_configs.M_MAX_EVALUATIONS
     shots = es_configs.SHOTS
@@ -89,7 +90,8 @@ def main():
         'n_ancilla': n_ancilla,
         'patch_shape': patch_shape,
         'pixels_per_patch': n_pixels_patch,
-        'batch_size': evol_batch_size,
+        'dataloader': train_evo_loader,
+        'n_batches': evol_n_bacthes,
         'classes': classes,
         'n_children': n_children,
         'n_patches': n_patches,

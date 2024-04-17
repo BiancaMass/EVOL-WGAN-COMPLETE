@@ -14,7 +14,8 @@ MAX_DEPTH = 10
 # --------------------------------
 #    GAN PARAMETERS (for evol)
 # --------------------------------
-EVOL_BATCH_SIZE = 128  # keep high cause distance is calculated on only 1 batch
+EVOL_N_BATCHES = 10
+EVOL_BATCH_SIZE = 25  # keep high cause distance is calculated on only 1 batch
 LR_G = 0.01  # learning rate for the generator
 # Betas, initial decay rate for the Adam optimizer
 # Check: if these values are appropriate

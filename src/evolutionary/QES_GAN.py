@@ -4,21 +4,15 @@ import random
 import math
 import csv
 import torch
-from torch.utils.data import DataLoader
 from qiskit import QuantumCircuit, QuantumRegister, execute, Aer, IBMQ
-from qiskit.circuit.library import RYGate, RXGate, RZGate, RXXGate, RYYGate, RZZGate
+# from qiskit.circuit.library import RYGate, RXGate, RZGate, RXXGate, RYYGate, RZZGate
 from qiskit.circuit.library import UGate, CXGate
-from qiskit_aer import AerSimulator
-from qiskit.providers.fake_provider import FakeMumbaiV2
-from decimal import Decimal, getcontext
 
-from networks.generator_methods import from_patches_to_image, from_probs_to_pixels
-from utils.critic_based_fitness_function import scoring_function
-from utils.emd_cost_function import emd_scoring_function
-from utils.dataset import select_from_dataset, load_mnist
-from utils.plotting import save_tensor
-from configs import training_config
+from src.utils.image_utils.evolutionary_image_utils import crop_images_for_evol
 
+from src.evolutionary.nets.generator_methods import from_patches_to_image, from_probs_to_pixels
+from src.utils.emd_cost_function import emd_scoring_function
+from src.utils.image_utils.evol_plotting import save_tensor
 
 # TODO: for now hard coded to only consider the first patch.
 # TODO: consider later to include either different patches at random, to avoid overfitting and
@@ -30,7 +24,7 @@ class Qes:
     """
 
     def __init__(self, n_data_qubits, n_ancilla, patch_shape, pixels_per_patch,
-                 batch_size, classes, n_patches,
+                 dataloader, batch_size, n_batches, classes, n_patches,
                  n_children, n_max_evaluations, shots, device,
                  dtheta, action_weights, multi_action_pb, max_gen_no_improvement,
                  output_dir, **kwargs):
@@ -39,8 +33,9 @@ class Qes:
         :param n_data_qubits: integer. Number of data qubits for the circuit.
         :param n_ancilla: integer. Number of ancilla qubits for the circuit.
         :param patch_shape: tuple. weight and height of the image.
-        :param pixels_per_patch: int. Number of pixels in one patch.
-        :param batch_size: int. Batch size to evaluate a qc (how many times to call it for the
+        :param pixels_per_patch: int. Number of pixels in one patch
+        :param dataloader: dataloader. The data to use to calculate fitness with the generated images.
+        :param n_batches: int. Batch size to evaluate a qc (how many times to call it for the
         fitness)
         :param classes: list. The classes of images for the dataset e.g., [0,1] for mnist
         :param n_patches: int. number of patches that the 28x28 image is divided into. The
@@ -66,6 +61,8 @@ class Qes:
         self.patch_width, self.patch_height = patch_shape[0], patch_shape[1]
         self.pixels_per_patch = pixels_per_patch
         # ----- Input Data Parameters ----- #
+        self.dataloader = dataloader
+        self.n_batches = n_batches
         self.batch_size = batch_size
         self.classes = classes
         # ----- Evolutionary Parameters ----- #
@@ -127,7 +124,10 @@ class Qes:
         self.output = None  # All the algorithm data we need to store
 
         # Preload images from the real dataset to use to calculate the EMD (earth mover distance)
-        self.cached_real_images_batches = preload_real_images_batches(n_batches=10)
+        self.cropped_real_images = crop_images_for_evol(dataloader=self.dataloader,
+                                                        patch_height=self.patch_height,
+                                                        n_batches=self.n_batches,
+                                                        device=self.device)
 
         print('Initial quantum circuit: \n', self.ind)
 
@@ -140,7 +140,7 @@ class Qes:
         - patch_width: {self.patch_width}
         - patch_height: {self.patch_height}
         - pixels_per_patch: {self.pixels_per_patch}
-        - batch_size: {self.batch_size}
+        - n_batches: {self.n_batches}
         - classes: {self.classes}
         - n_children: {self.n_children}
         - n_max_evaluations: {self.n_max_evaluations}
@@ -154,12 +154,15 @@ class Qes:
         - output directory: {self.output_dir}
         """)
 
-
-
     def action(self):
-        """ It generates n_children of the individual and apply one of the 4 POSSIBLE ACTIONS(add,
-        delete, swap, mutate) on each of them. Then the new quantum circuits are stored in the
-        attribute 'population' """
+        """
+        Generates n_children of the individual and apply one of the 4 POSSIBLE ACTIONS A,D,S,M
+        on each of them. Then the new quantum circuits are stored in 'population'.
+        ADD: add a random gate on a random qubit at the end of the parent quantum circuit
+        DELETE: delete a random gate in a random position of the parent quantum circuit
+        SWAP: Remove a random gate and replace it with a new gate randomly chosen
+        MUTATE: Choose a gate and change its angle by a value between [θ-d_θ, θ+d_θ]
+        """
 
         population = []
         print(f"Parent ansatz \n \n {self.ind}")
@@ -193,11 +196,10 @@ class Qes:
             # print('action choice:', self.act_choice, 'for the copy number: ', i)
 
             for j in range(counter):  # go over the selected actions for this one child
-                # ADD a random gate on a random qubit at the end of the parent quantum circuit
+
                 if self.act_choice[j] == 'A':
-                    # print("ADDING action was selected \n")
-                    # Chooses 2 locations for the destination qubit(s). Only one will be used for
-                    # U, 2 for CNOT
+                    # Chooses 2 locations for the destination qubit(s).
+                    # Only one will be used for U, 2 for CNOT
                     position = random.sample([i for i in range(len(qc.qubits))], k=2)
                     # Choose the type of gate (pick an index for the gates list)
                     choice = random.randint(0, len(gate_list) - 1)
@@ -209,12 +211,7 @@ class Qes:
                         # print(f"Adding a {gate_list[choice]} gate at positions: {position}")
                         gate_list[choice](position[0], position[1])
 
-                    # print('Circuit after ADD ACTION:')
-                    # print(qc)
-
-                # DELETE a random gate in a random position of the parent quantum circuit
                 elif self.act_choice[j] == 'D':
-                    # print("DELETE action was selected")
                     # Pick a position for the gate to remove.
                     # Exclude the the first n_tot_qubits gates (encoding gates)
                     if self.n_tot_qubits < len(qc.data) - 1:
@@ -222,21 +219,15 @@ class Qes:
                         qc.data.remove(qc.data[position])
                     else:
                         pass
-                    # print("Circuit after DELETE action")
-                    # print(qc)
 
-                # SWAP: Remove a random gate and replace it with a new gate randomly chosen
                 elif self.act_choice[j] == 'S':
-                    # print("SWAP action was selected \n")
                     # Control if there are enough gates in the circuit to perform a SWAP
                     if len(qc.data) - 1 - self.n_tot_qubits > 0:
                         # Pick a position for the gate to swap
                         # Exclude the the first n_tot_qubits gates (encoding gates)
                         position = random.randint(self.n_tot_qubits, len(qc.data) - 2)
                         remove_ok = True
-                    else:
-                        # Handle the case where there are not enough gates to swap
-                        # print("Not enough gates to perform SWAP action.")
+                    else:  # Handle the case where there are not enough gates to swap
                         remove_ok = False
 
                     if remove_ok:
@@ -280,12 +271,8 @@ class Qes:
                             element_to_remove[1] = qubits_
                             element_to_add = tuple(element_to_remove)
                             qc.data[position] = element_to_add
-                            # print('Circuit after SWAP action')
-                            # print(qc)
 
-                # MUTATE: Choose a gate and change its angle by a value between [θ-d_θ, θ+d_θ]
                 elif self.act_choice[j] == 'M':
-                    # print("MUTATE action was selected \n")
                     to_select = 'u'
                     gates_to_mutate = [i for i, gate in enumerate(qc.data[self.n_tot_qubits:],
                                                                   start=self.n_tot_qubits)
@@ -298,69 +285,44 @@ class Qes:
                         angle_new = gate_to_mutate[0].params[angle_to_mutate] + random.uniform(0,
                                                                                                self.dtheta)
                         gate_to_mutate[0].params[angle_to_mutate] = angle_new
-
-                        # print(
-                        #     f'Mutated gate {gate_to_mutate} into {(mutated_gate, *gate_to_mutate[1:])} at position {position}')
-                        # print('Circuit after MUTATE action')
-                        # print(qc)
-                    else:
+                    else:  # Skip action if no mutable gates (parameterized) are available
                         pass
-                        # print('Skipping MUTATE action as there are no gates available for mutation')
 
                 # In case of multiactions we are appending more circuits to the population,
                 # if you don't want that put the next code line outside of the for loop on counter
             population.append(qc)
         self.population = population
-        # print(f'Current population after the action(): {self.population}')
         return self
 
     def encode(self):
         """
-        It transforms a quantum circuit (ind) in a string of real values of length 2^N, where N=len(ind).
+        It transforms a quantum circuit in a string of real values of length 2^N.
         """
         self.candidate_sol = []
-        # Let qasm be more free because of the shot noise
-        if self.simulator == 'qasm':
-            if self.no_improvements > 10:
-                self.population.insert(0, self.best_individuals[-1])
 
         for j in range(len(self.population)):
             qc = self.population[j].copy()
             resulting_image = np.zeros(self.pixels_per_patch)
 
-            # Set up the type of simulator we want to use
-            if self.simulator == 'qasm':  # TODO: reintegrate qasm
-                # gotta insert from_patches_to_image() but with the right simulator
-                raise NotImplementedError("qasm implementation is currently not supported.")
-                # qc.measure_all()
-                # # print(self.shots)
-                # job = execute(qc, sim, shots=self.shots, seed_simulator=random.randint(0, 100))
-                # result = job.result()
-                # counts = result.get_counts()
-                # for i in counts.keys():
-                #     # Conversion from binary to decimal, considering qiskit writes from the right to the left
-                #     getcontext().prec = 20
-                #     index = int(i[::-1], 2)
-                #     p[index] = Decimal(str(counts[i])) / Decimal(str(self.shots))
+            if self.n_patches > 1:
+                resulting_image = from_probs_to_pixels(
+                                            quantum_circuit=qc,
+                                            n_tot_qubits=self.n_tot_qubits,
+                                            n_ancillas=self.n_ancilla,
+                                            sim=self.sim)[:self.pixels_per_patch]
 
-            elif self.simulator == 'statevector':
-                if self.n_patches > 1:
-                    resulting_image = from_probs_to_pixels(quantum_circuit=qc,
-                                                           n_tot_qubits=self.n_tot_qubits,
-                                                           n_ancillas=self.n_ancilla,
-                                                           sim=self.sim)[
-                                      :self.pixels_per_patch]
-                    resulting_image = torch.reshape(torch.from_numpy(resulting_image),
-                                                    (1, self.patch_height, self.patch_width))
-                else:
-                    resulting_image = from_patches_to_image(quantum_circuit=qc,
-                                                            n_tot_qubits=self.n_tot_qubits,
-                                                            n_ancillas=self.n_ancilla,
-                                                            n_patches=self.n_patches,
-                                                            pixels_per_patch=self.pixels_per_patch,
-                                                            patch_width=self.patch_width,
-                                                            patch_height=self.patch_height,
-                                                            sim=self.sim)
+                resulting_image = torch.reshape(
+                                            resulting_image,
+                                            (1, self.patch_height, self.patch_width))
+            else:
+                resulting_image = from_patches_to_image(quantum_circuit=qc,
+                                                        n_tot_qubits=self.n_tot_qubits,
+                                                        n_ancillas=self.n_ancilla,
+                                                        n_patches=self.n_patches,
+                                                        pixels_per_patch=self.pixels_per_patch,
+                                                        patch_width=self.patch_width,
+                                                        patch_height=self.patch_height,
+                                                        sim=self.sim)
 
             if self.current_gen == 0:
                 self.best_solution.append(resulting_image)
@@ -370,10 +332,9 @@ class Qes:
 
     @property
     def fitness(self):
-        """Evaluates the fitness of quantum circuits using a pre-trained classical NN critic.
+        """Evaluates the fitness of quantum circuits using earth mover distance between real and
+        generated flattened images or patches.
 
-        The method calculates the fitness of quantum circuit candidates.
-        Handles both noiseless and noisy simulations based on the `simulator` attribute.
         Updates the `fitnesses` list with calculated fitness values for each.
 
         :return: instance. Self, with updated fitnesses values.
@@ -384,35 +345,31 @@ class Qes:
         # if there are more candidates than chosen number of children
         # Question: why?
         if len(self.candidate_sol) > self.n_children:
-            selected_batch = random.choice(self.cached_real_images_batches)
+            selected_batch = random.choice(self.cropped_real_images)
             try:
-                if self.fitness_function == 'emd':
-                    self.best_fitness[-1] = emd_scoring_function(
-                        real_images_preloaded=selected_batch,
-                        batch_size=self.batch_size,
-                        qc=self.population[0],
-                        n_tot_qubits=self.n_tot_qubits,
-                        n_ancillas=self.n_ancilla,
-                        n_patches=self.n_patches,
-                        pixels_per_patch=self.pixels_per_patch,
-                        patch_width=self.patch_width,
-                        patch_height=self.patch_height,
-                        sim=self.sim)
-                elif self.fitness_function == 'critic':
-                    self.best_fitness[-1] = scoring_function(batch_size=self.batch_size,
-                                                             critic=self.critic_net,
-                                                             qc=self.population[0],
-                                                             n_tot_qubits=self.n_tot_qubits,
-                                                             n_ancillas=self.n_ancilla,
-                                                             n_patches=self.n_patches,
-                                                             pixels_per_patch=self.pixels_per_patch,
-                                                             patch_width=self.patch_width,
-                                                             patch_height=self.patch_height,
-                                                             sim=self.sim,
-                                                             device=self.device)
-                else:
-                    raise ValueError(
-                        'Unsupported fitness function specified. Please select either "emd" or "critic".')
+                self.best_fitness[-1] = emd_scoring_function(
+                    real_images_preloaded=selected_batch,
+                    batch_size=self.batch_size,
+                    qc=self.population[0],
+                    n_tot_qubits=self.n_tot_qubits,
+                    n_ancillas=self.n_ancilla,
+                    n_patches=self.n_patches,
+                    pixels_per_patch=self.pixels_per_patch,
+                    patch_width=self.patch_width,
+                    patch_height=self.patch_height,
+                    sim=self.sim)
+                # elif self.fitness_function == 'critic':
+                #     self.best_fitness[-1] = scoring_function(batch_size=self.batch_size,
+                #                                              critic=self.critic_net,
+                #                                              qc=self.population[0],
+                #                                              n_tot_qubits=self.n_tot_qubits,
+                #                                              n_ancillas=self.n_ancilla,
+                #                                              n_patches=self.n_patches,
+                #                                              pixels_per_patch=self.pixels_per_patch,
+                #                                              patch_width=self.patch_width,
+                #                                              patch_height=self.patch_height,
+                #                                              sim=self.sim,
+                #                                              device=self.device)
             except Exception as e:
                 print(f"An error occurred during fitness function evaluation: {e}")
 
@@ -421,22 +378,10 @@ class Qes:
             del self.population[0]
 
         for i in range(len(self.candidate_sol)):
-            selected_batch = random.choice(self.cached_real_images_batches)
+            selected_batch = random.choice(self.cropped_real_images)
             try:
-                if self.fitness_function == 'emd':
-                    self.fitnesses.append(emd_scoring_function(real_images_preloaded=selected_batch,
-                                                               batch_size=self.batch_size,
-                                                               qc=self.population[i],
-                                                               n_tot_qubits=self.n_tot_qubits,
-                                                               n_ancillas=self.n_ancilla,
-                                                               n_patches=self.n_patches,
-                                                               pixels_per_patch=self.pixels_per_patch,
-                                                               patch_width=self.patch_width,
-                                                               patch_height=self.patch_height,
-                                                               sim=self.sim))
-                elif self.fitness_function == 'critic':
-                    self.fitnesses.append(scoring_function(batch_size=self.batch_size,
-                                                           critic=self.critic_net,
+                self.fitnesses.append(emd_scoring_function(real_images_preloaded=selected_batch,
+                                                           batch_size=self.batch_size,
                                                            qc=self.population[i],
                                                            n_tot_qubits=self.n_tot_qubits,
                                                            n_ancillas=self.n_ancilla,
@@ -444,21 +389,28 @@ class Qes:
                                                            pixels_per_patch=self.pixels_per_patch,
                                                            patch_width=self.patch_width,
                                                            patch_height=self.patch_height,
-                                                           sim=self.sim,
-                                                           device=self.device))
-                else:
-                    raise ValueError('Unsupported fitness function specified. Please select '
-                                     'either "emd" or "critic".')
+                                                           sim=self.sim))
+                # elif self.fitness_function == 'critic':
+                #     self.fitnesses.append(scoring_function(batch_size=self.batch_size,
+                #                                            critic=self.critic_net,
+                #                                            qc=self.population[i],
+                #                                            n_tot_qubits=self.n_tot_qubits,
+                #                                            n_ancillas=self.n_ancilla,
+                #                                            n_patches=self.n_patches,
+                #                                            pixels_per_patch=self.pixels_per_patch,
+                #                                            patch_width=self.patch_width,
+                #                                            patch_height=self.patch_height,
+                #                                            sim=self.sim,
+                #                                            device=self.device))
+
             except Exception as e:
                 print(f"An error occurred during fitness function evaluation: {e}")
 
             self.fitness_evaluations += 1
-        # print(f'fitnesses: {self.fitnesses}')
 
         if self.current_gen == 0:
             self.best_fitness.append(self.fitnesses[0])
 
-        # print('Fitness evaluations: ', self.fitness_evaluations)
         return self
 
     def multiaction(self):
@@ -468,8 +420,6 @@ class Qes:
 
         :return: instance. Self, with updated multi-action count (`counting_multi_action`).
         """
-
-        # print('multiaction() called')
         self.counting_multi_action = 0
         rand = random.uniform(0, 1)
         # Question: why set it this way? Repeated many times until random happens to be > m.a.probs.
@@ -508,54 +458,50 @@ class Qes:
                 # perform action on parent_ansatz, and then calculate fitness
                 self.action().encode().fitness
 
-                if self.fitness_function == 'emd':  # with emd goal is to minimize
-                    index = np.argmin(self.fitnesses)  # index of the best (smallest) fitness value
-                    # self.fitnesses is the list of fitness values for the current generation
-                    if self.fitnesses[index] < self.best_fitness[g - 1]:
-                        print('improvement found')
-                        self.best_individuals.append(self.population[index])
-                        self.ind = self.population[index]
-                        self.depth.append(self.ind.depth())
-                        self.best_fitness.append(self.fitnesses[index])
-                        self.best_solution.append(self.candidate_sol[index])
-                        for i in range(self.counting_multi_action + 1):
-                            self.best_actions.append(self.act_choice[i])
+                index = np.argmin(self.fitnesses)  # index of the best (smallest) fitness value
+                # self.fitnesses is the list of fitness values for the current generation
+                if self.fitnesses[index] < self.best_fitness[g - 1]:
+                    print('improvement found')
+                    self.best_individuals.append(self.population[index])
+                    self.ind = self.population[index]
+                    self.depth.append(self.ind.depth())
+                    self.best_fitness.append(self.fitnesses[index])
+                    self.best_solution.append(self.candidate_sol[index])
+                    for i in range(self.counting_multi_action + 1):
+                        self.best_actions.append(self.act_choice[i])
 
-                        self.no_improvements = 0
-
-                    else:
-                        print('no improvements found')
-                        self.no_improvements += 1
-                        self.best_individuals.append(self.ind)
-                        self.depth.append(self.ind.depth())
-                        self.best_fitness.append(self.best_fitness[g - 1])
-                        self.best_solution.append(self.best_solution[g - 1])
-
-                elif self.fitness_function == 'critic':  # with critic goal is to maximize
-                    index = np.argmax(self.fitnesses)  # index of the best (greatest) fitness value
-                    # self.fitnesses is the list of fitness values for the current generation
-                    if self.fitnesses[index] > self.best_fitness[g - 1]:
-                        print('improvement found')
-                        self.best_individuals.append(self.population[index])
-                        self.ind = self.population[index]
-                        self.depth.append(self.ind.depth())
-                        self.best_fitness.append(self.fitnesses[index])
-                        self.best_solution.append(self.candidate_sol[index])
-                        for i in range(self.counting_multi_action + 1):
-                            self.best_actions.append(self.act_choice[i])
-
-                        self.no_improvements = 0
-
-                    else:
-                        print('no improvements found')
-                        self.no_improvements += 1
-                        self.best_individuals.append(self.ind)
-                        self.depth.append(self.ind.depth())
-                        self.best_fitness.append(self.best_fitness[g - 1])
-                        self.best_solution.append(self.best_solution[g - 1])
+                    self.no_improvements = 0
 
                 else:
-                    raise ValueError(f"Unknown fitness function: {self.fitness_function}")
+                    print('no improvements found')
+                    self.no_improvements += 1
+                    self.best_individuals.append(self.ind)
+                    self.depth.append(self.ind.depth())
+                    self.best_fitness.append(self.best_fitness[g - 1])
+                    self.best_solution.append(self.best_solution[g - 1])
+
+                # elif self.fitness_function == 'critic':  # with critic goal is to maximize
+                #     index = np.argmax(self.fitnesses)  # index of the best (greatest) fitness value
+                #     # self.fitnesses is the list of fitness values for the current generation
+                #     if self.fitnesses[index] > self.best_fitness[g - 1]:
+                #         print('improvement found')
+                #         self.best_individuals.append(self.population[index])
+                #         self.ind = self.population[index]
+                #         self.depth.append(self.ind.depth())
+                #         self.best_fitness.append(self.fitnesses[index])
+                #         self.best_solution.append(self.candidate_sol[index])
+                #         for i in range(self.counting_multi_action + 1):
+                #             self.best_actions.append(self.act_choice[i])
+                #
+                #         self.no_improvements = 0
+                #
+                #     else:
+                #         print('no improvements found')
+                #         self.no_improvements += 1
+                #         self.best_individuals.append(self.ind)
+                #         self.depth.append(self.ind.depth())
+                #         self.best_fitness.append(self.best_fitness[g - 1])
+                #         self.best_solution.append(self.best_solution[g - 1])
 
                 # Save best image every 10 generations
                 if g % 10 == 0:
@@ -564,18 +510,12 @@ class Qes:
                                                                              self.patch_width),
                                 filename=image_filename)
 
-                # print('best qc:\n_qubits', self.ind)
-                # print('circuit depth:', self.depth[g])
-                # print('best solution so far:\n_qubits', self.best_solution[g])
-
                 # To reduce probability to get stuck in local minima: change hyper-parameter value
                 if self.no_improvements == self.max_gen_no_improvement:
-                    # print('Dtheta increased to avoid local minima')
                     self.dtheta += 0.1
                     # Another way would be to increase self.multi_action_pb
                 elif self.no_improvements == 0:
                     self.dtheta = theta_default
-                # print('dtheta:', self.dtheta)
                 # Termination criteria
                 if self.fitness_evaluations == self.n_max_evaluations:
                     break
@@ -585,7 +525,6 @@ class Qes:
                         self.action_weights = [0, 20, 0, 80]
                 else:
                     self.action_weights = action_weights
-                    # print('action weights: ', self.action_weights)
             self.current_gen += 1
             print('Number of generations with no improvements: ', self.no_improvements)
             print('best fitness so far: ', self.best_fitness[g])
@@ -615,14 +554,11 @@ class Qes:
             "N Children": self.n_children,
             "Max Evaluations": self.n_max_evaluations,
             "Shots": self.shots,
-            "Simulator": self.simulator,
-            "Noise": self.noise,
             "DTheta": self.dtheta,
             "Action Weights": self.action_weights,
             "Multi Action Probability": self.multi_action_pb,
             "Max Generations No Improvement": self.max_gen_no_improvement,
             "Max Depth": self.max_depth,
-            "Fitness Function": self.fitness_function
         }
 
         # Look if the output directory exists, if not, create it
