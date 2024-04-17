@@ -1,7 +1,7 @@
 import os
 from torchvision.utils import save_image
 
-from image_utils.denormalize import denorm
+from denormalize import denorm
 
 
 def save_generated_images(generator, latent_vector, out_dir, image_name="generated"):

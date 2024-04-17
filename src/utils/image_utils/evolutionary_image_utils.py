@@ -1,6 +1,7 @@
+from data_loader_MNIST import dataloader_mnist
 
 
-def preload_real_images_batches(self, n_batches=10):
+def load_and_crop_images_for_evo(self, n_batches=10):
     """
     Pre-loads a specified number of image batches from the mnist dataset, with the given
     classes. Crops the images to only keep as many pixels as there are in one patch (top
@@ -13,8 +14,8 @@ def preload_real_images_batches(self, n_batches=10):
     """
     # TODO: currently only loads the top patch if patches. Might be okay but think about it.
     print("Pre-loading real image batches")
-    dataset = select_from_dataset(load_mnist(image_size=self.patch_width), 1000, self.classes)
-    dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=1)
+    dataloader = dataloader_mnist(num_workers, file_location='./datasets', image_size=None,
+                                  classes=None, samples_per_class=1000, train=True, batch_size=25)
     real_images_batches = []
     for i, (real_images, _) in enumerate(dataloader):
         target_height = self.patch_height

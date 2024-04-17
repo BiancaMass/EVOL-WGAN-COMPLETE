@@ -1,69 +1,93 @@
-import torch
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import Subset
+from torch.utils.data import Subset, DataLoader
 
 
-def dataloader_mnist(num_workers, file_location='./datasets', image_size=None, classes=None,
-                     samples_per_class=1000, train=True, batch_size=25):
+def dataloader_mnist(num_workers, data_dir='./datasets', image_side=None, classes=None,
+                     train=True, evol_batch_size=100, gan_batch_size=25,
+                     gan_train_size=800, gan_val_size=200, evol_train_size=300, evol_val_size=100):
     """
-    Load the MNIST dataset. Downloads it if not already present on local storage.
-    Normalizes the pixel values to the range [-1, 1]
-    Resizes the images if image size is specified.
-    Returns a subset of the data based on the specified classes and
+    Load the MNIST dataset. Download it if not present locally, normalize pixel values to [-1, 1].
+    Optionally resize images. Returns training and validation sets for the evolutionary algorithm
+    and GAN.
 
-    :param num_workers: int. Number of parallel processes for loading and preprocessing the images.
-    :param file_location: str. Path to the directory where the dataset will be stored.
-    Defaults to './datasets'.
-    :param image_size: tuple or None: The desired size of the images. If None, images are not
-    resized. Default MNIST size is 28x28.
-    :param classes: list. Classes to load e.g., only [0,1]
-    :param samples_per_class: int. how many samples to load per class
-    :param train: whether to load from the training set (True) or test set (False).
-    :param batch_size: int. Defaults to 25.
+    :param num_workers: int. Number of parallel processes for loading and preprocessing images.
+    :param data_dir: str. Path to dataset directory. Defaults to './datasets'.
+    :param image_side: tuple or None. Desired image size. Default MNIST size is 28x28.
+    :param classes: list. Classes to load, e.g., [0, 1].
+    :param train: bool. Load from training set (True) or test set (False).
+    :param evol_batch_size: int. Batch size for evolutionary training. Defaults to 100.
+    :param gan_batch_size: int. Batch size for GAN training. Defaults to 25.
+    :param gan_train_size: Number of samples per class for GAN training. Defaults to 800.
+    :param gan_val_size: Number of samples per class for GAN validation. Defaults to 200.
+    :param evol_train_size: Number of samples per class for evolutionary training. Defaults to 300.
+    :param evol_val_size: Number of samples per class for evolutionary validation. Defaults to 100.
 
-    :return: DataLoader. DataLoader for the specified subset of the MNIST dataset.
+    :return: Four DataLoader objects for the specified subsets of the MNIST dataset:
+             train_gan_loader, val_gan_loader, train_evo_loader, val_evo_loader.
     """
-    if classes is None:
-        classes = [0, 1]
-
     # Define the transformations to apply to the data before loading.
-    # Normalizing makes training easier and faster. 0.5, 0.5 is quite standard
-    # If image size is specified, resize accordingly.
-    if image_size is not None:
-        transform = transforms.Compose([transforms.Resize(image_size),
+    if image_side is not None:
+        transform = transforms.Compose([transforms.Resize(image_side),
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5,), (0.5,))])
     else:
         transform = transforms.Compose([transforms.ToTensor(),
-                                       transforms.Normalize((0.5,), (0.5,))])
+                                        transforms.Normalize((0.5,), (0.5,))])
 
-    # Load the MNIST dataset, either train or test according to train argument
-    full_dataset = torchvision.datasets.MNIST(root=file_location,
+    # Load the MNIST dataset.
+    full_dataset = torchvision.datasets.MNIST(root=data_dir,
                                               train=train,
                                               download=True,
                                               transform=transform)
 
-    # Create a subset with only the selected classes, limiting the number of samples per class
-    # for efficiency
-    counts = {class_id: 0 for class_id in classes}
-    indices = []
+    classes = classes if classes is not None else [0, 1]
+    class_indices = [i for i, (_, label) in enumerate(full_dataset) if label in classes]
+    class_dataset = Subset(full_dataset, class_indices)
 
-    for idx, (image, label) in enumerate(full_dataset):
-        # Select the indices we want to keep, to only load the desired subset of the data
-        if counts.get(label, 0) < samples_per_class and label in classes:
-            indices.append(idx)
-            counts[label] += 1
-            # Once all classes have enough samples, break
-            if all(count >= samples_per_class for count in counts.values()):
-                break
+    # subset points:
+    a = evol_train_size
+    b = a + evol_val_size
+    c = b + gan_train_size
+    d = c + gan_val_size
 
-    dataset_subset = Subset(full_dataset, indices)
-    dataloader = torch.utils.data.DataLoader(dataset_subset,
-                                             batch_size=batch_size,
-                                             shuffle=True,
-                                             num_workers=num_workers)
+    # Split indices for GAN and evolutionary training/validation
+    evol_train_indices = []
+    evol_val_indices = []
 
-    return dataloader
+    gan_train_indices = []
+    gan_val_indices = []
 
+    for cl in classes:
+        current_class_indices = [i for i, (_, label) in enumerate(class_dataset) if label == cl]
+        evol_train_indices.extend(current_class_indices[:a])
+        evol_val_indices.extend(current_class_indices[a:b])
+        gan_train_indices.extend(current_class_indices[b:c])
+        gan_val_indices.extend(current_class_indices[c:d])
 
+    # Create subsets
+    train_evol_dataset = Subset(class_dataset, evol_train_indices)
+    val_evol_dataset = Subset(class_dataset, evol_val_indices)
+    train_gan_dataset = Subset(class_dataset, gan_train_indices)
+    val_gan_dataset = Subset(class_dataset, gan_val_indices)
+
+    # Create data loaders
+    train_gan_loader = DataLoader(train_gan_dataset,
+                                  batch_size=gan_batch_size,
+                                  shuffle=True,
+                                  num_workers=num_workers)
+    val_gan_loader = DataLoader(val_gan_dataset,
+                                batch_size=gan_batch_size,
+                                shuffle=False,
+                                num_workers=num_workers)
+
+    train_evo_loader = DataLoader(train_evol_dataset,
+                                  batch_size=evol_batch_size,
+                                  shuffle=True,
+                                  num_workers=num_workers)
+    val_evo_loader = DataLoader(val_evol_dataset,
+                                batch_size=evol_batch_size,
+                                shuffle=False,
+                                num_workers=num_workers)
+
+    return train_gan_loader, val_gan_loader, train_evo_loader, val_evo_loader
