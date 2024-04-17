@@ -5,4 +5,4 @@ __pycache__/
 # Custom exclusions
 input/
 output/
-/Users/bmassacci/main_folder/maastricht/academics/quantum_thesis/scripts/EVOL-WGAN-COMPLETE/venvs
+venvs/
