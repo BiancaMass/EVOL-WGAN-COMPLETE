@@ -75,7 +75,7 @@ def dataloader_mnist(num_workers, data_dir='./datasets', image_side=None, classe
     train_gan_loader = DataLoader(train_gan_dataset,
                                   batch_size=gan_batch_size,
                                   shuffle=True,
-                                  workers=num_workers)
+                                  num_workers=num_workers)
     val_gan_loader = DataLoader(val_gan_dataset,
                                 batch_size=gan_batch_size,
                                 shuffle=False,

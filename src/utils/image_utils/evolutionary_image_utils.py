@@ -1,5 +1,3 @@
-from data_loader_MNIST import dataloader_mnist
-
 
 def crop_images_for_evol(dataloader, patch_height, n_batches, device):
     """

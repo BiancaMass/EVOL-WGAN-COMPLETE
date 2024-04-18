@@ -26,7 +26,7 @@ def get_probabilities(quantum_circuit, n_tot_qubits, sim):
     for i in range(len(np.asarray(statevector))):
         p[i] = np.absolute(statevector[i]) ** 2  # store probs in array `p`
 
-    return torch.from_numpy(p)
+    return p  # torch.from_numpy(p)
 
 
 def from_probs_to_pixels(quantum_circuit, n_tot_qubits, n_ancillas, sim):
@@ -46,15 +46,15 @@ def from_probs_to_pixels(quantum_circuit, n_tot_qubits, n_ancillas, sim):
     :param sim: str. Name of the simulator backend to be used for execution, e.g., 'aer_simulator'.
 
     """
-
+    # probs is a Tensor
     probs = get_probabilities(quantum_circuit=quantum_circuit, n_tot_qubits=n_tot_qubits,
                               sim=sim)
     # Introduce non-linearity
     probsgiven0 = probs[:2 ** (n_tot_qubits - n_ancillas)]
     # Normalize the probabilities by their sum (normalization constraint)
-    probsgiven0 /= torch.sum(probsgiven0)
+    probsgiven0 /= sum(probsgiven0)
     # Normalise pixels in [-1, 1] for the GAN (because we import MNIST with this range)
-    post_processed_patch = ((probsgiven0 / torch.max(probsgiven0)) - 0.5) / 0.5
+    post_processed_patch = ((probsgiven0 / max(probsgiven0)) - 0.5) / 0.5
 
     return post_processed_patch
 
@@ -76,7 +76,7 @@ def from_patches_to_image(quantum_circuit, n_tot_qubits, n_ancillas, n_patches, 
 
     :return: torch.Tensor. A tensor representing the final image.
     """
-    final_patches = []  # list to store all the patches
+    final_image = torch.empty((0, n_patches))
     for patch in range(n_patches):
         current_patch = from_probs_to_pixels(quantum_circuit=quantum_circuit,
                                              n_tot_qubits=n_tot_qubits,
@@ -85,8 +85,9 @@ def from_patches_to_image(quantum_circuit, n_tot_qubits, n_ancillas, n_patches, 
         current_patch = current_patch[:pixels_per_patch]
         current_patch = torch.reshape(torch.from_numpy(current_patch),
                                       (1, patch_height, patch_width))
-        final_patches.append(current_patch)
-
-    final_image = torch.cat(final_patches, dim=0)
+    if n_patches == 1:
+        final_image = current_patch
+    else:
+        final_image = torch.cat((final_image, current_patch), dim=0)
 
     return final_image

@@ -24,7 +24,7 @@ class Qes:
     """
 
     def __init__(self, n_data_qubits, n_ancilla, patch_shape, pixels_per_patch,
-                 dataloader, batch_size, n_batches, classes, n_patches,
+                 dataloader, evol_batch_size, n_batches, classes, n_patches,
                  n_children, n_max_evaluations, shots, device,
                  dtheta, action_weights, multi_action_pb, max_gen_no_improvement,
                  output_dir, **kwargs):
@@ -35,6 +35,7 @@ class Qes:
         :param patch_shape: tuple. weight and height of the image.
         :param pixels_per_patch: int. Number of pixels in one patch
         :param dataloader: dataloader. The data to use to calculate fitness with the generated images.
+        :param evol_batch_size: # TODO
         :param n_batches: int. Batch size to evaluate a qc (how many times to call it for the
         fitness)
         :param classes: list. The classes of images for the dataset e.g., [0,1] for mnist
@@ -63,7 +64,7 @@ class Qes:
         # ----- Input Data Parameters ----- #
         self.dataloader = dataloader
         self.n_batches = n_batches
-        self.batch_size = batch_size
+        self.evol_batch_size = evol_batch_size
         self.classes = classes
         # ----- Evolutionary Parameters ----- #
         self.n_children = n_children
@@ -312,7 +313,7 @@ class Qes:
                                             sim=self.sim)[:self.pixels_per_patch]
 
                 resulting_image = torch.reshape(
-                                            resulting_image,
+                                            torch.from_numpy(resulting_image),
                                             (1, self.patch_height, self.patch_width))
             else:
                 resulting_image = from_patches_to_image(quantum_circuit=qc,
@@ -349,7 +350,7 @@ class Qes:
             try:
                 self.best_fitness[-1] = emd_scoring_function(
                     real_images_preloaded=selected_batch,
-                    batch_size=self.batch_size,
+                    batch_size=self.evol_batch_size,
                     qc=self.population[0],
                     n_tot_qubits=self.n_tot_qubits,
                     n_ancillas=self.n_ancilla,
@@ -381,7 +382,7 @@ class Qes:
             selected_batch = random.choice(self.cropped_real_images)
             try:
                 self.fitnesses.append(emd_scoring_function(real_images_preloaded=selected_batch,
-                                                           batch_size=self.batch_size,
+                                                           batch_size=self.evol_batch_size,
                                                            qc=self.population[i],
                                                            n_tot_qubits=self.n_tot_qubits,
                                                            n_ancillas=self.n_ancilla,
@@ -550,7 +551,7 @@ class Qes:
             "N Data Qubits": self.n_data_qubits,
             "N Ancilla": self.n_ancilla,
             "Image Shape": (self.patch_height, self.patch_width),
-            "Batch Size": self.batch_size,
+            "Batch Size": self.evol_batch_size,
             "N Children": self.n_children,
             "Max Evaluations": self.n_max_evaluations,
             "Shots": self.shots,

@@ -27,9 +27,9 @@ def main():
         print(f"GAN output directory created: {gan_output_dir}")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('Using device:', device)
+    print(f'Using device: {device}')
 
-    num_workers = 1 if device == 'cpu' else 8 if device == 'cuda' else 0
+    num_workers = 0 if device == 'cpu' else 8 if device == 'cuda' else 0
     print(f"Number of workers selected: {num_workers}")
 
     # Parameters for both GAN and Evol
@@ -66,9 +66,7 @@ def main():
     gan_train_size = general_configs.GAN_TRAIN_SIZE
     gan_val_size = general_configs.GAN_VALID_SIZE
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(f'\nUsing {device} as a device\n')
-
+    print("Creating the data loaders")
     # Load the training and validation images for both algorithms
     train_gan_loader, val_gan_loader, train_evo_loader, val_evo_loader = dataloader_mnist(
         num_workers=num_workers,
@@ -92,6 +90,7 @@ def main():
         'pixels_per_patch': n_pixels_patch,
         'dataloader': train_evo_loader,
         'n_batches': evol_n_bacthes,
+        'evol_batch_size': evol_batch_size,
         'classes': classes,
         'n_children': n_children,
         'n_patches': n_patches,
