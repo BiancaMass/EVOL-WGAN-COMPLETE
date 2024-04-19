@@ -45,15 +45,20 @@ def main():
 
     # Params just for evol
     evol_batch_size = es_configs.EVOL_BATCH_SIZE
-    evol_n_bacthes = es_configs.EVOL_N_BATCHES
+    evol_n_batches = es_configs.EVOL_N_BATCHES
+    evol_batch_subset = es_configs.BATCH_SUBSET
     n_children = es_configs.N_CHILDREN
     n_max_evaluations = es_configs.M_MAX_EVALUATIONS
     shots = es_configs.SHOTS
     dtheta = es_configs.DTHETA
+    patch_for_evaluation = es_configs.PATCH_FOR_EVALUATION
     action_weights = es_configs.ACTION_WEIGHTS
     multi_action_pb = es_configs.MULTI_ACTION_PB
-    max_gen_no_improvements = es_configs.MAX_GEN_NO_IMPROVEMENT
+    max_gen_until_change = es_configs.MAX_GEN_NO_IMPROVEMENT
+    max_gen_no_improvement = es_configs.MAX_GEN_NO_IMPROVEMENT
     max_depth = es_configs.MAX_DEPTH
+
+    gen_saving_frequency = es_configs.GENERATION_SAVING_FREQUENCY
 
     evol_train_size = general_configs.EVOL_TRAIN_SIZE
     evol_val_size = general_configs.EVOL_VALID_SIZE
@@ -88,21 +93,25 @@ def main():
         'n_ancilla': n_ancilla,
         'patch_shape': patch_shape,
         'pixels_per_patch': n_pixels_patch,
+        'n_patches': n_patches,
         'dataloader': train_evo_loader,
-        'n_batches': evol_n_bacthes,
         'evol_batch_size': evol_batch_size,
+        'n_batches': evol_n_batches,
+        'batch_subset': evol_batch_subset,
         'classes': classes,
         'n_children': n_children,
-        'n_patches': n_patches,
         'n_max_evaluations': n_max_evaluations,
-        'shots': shots,
-        'device': device,
         'dtheta': dtheta,
         'action_weights': action_weights,
         'multi_action_pb': multi_action_pb,
-        'max_gen_no_improvement': max_gen_no_improvements,
-        'max_depth': max_depth,
-        'output_dir': evol_output_dir
+        'patch_for_evaluation': patch_for_evaluation,
+        'shots': shots,
+        'device': device,
+        'max_gen_until_change': max_gen_until_change,
+        'max_gen_no_improvement': max_gen_no_improvement,
+        'gen_saving_frequency': gen_saving_frequency,
+        'output_dir': evol_output_dir,
+        'max_depth': max_depth
     }
 
     print("*** STARTING EVOLUTIONARY SEARCH ***")

@@ -1,11 +1,11 @@
 import scipy
-from scipy import stats
+from scipy.stats import wasserstein_distance_nd
 import torch
 
 from src.evolutionary.nets.generator_methods import from_patches_to_image, from_probs_to_pixels
 
 
-def emd_scoring_function(real_images_preloaded, batch_size, qc,
+def emd_scoring_function(real_images_preloaded, num_images_to_compare, qc,
                          n_tot_qubits, n_ancillas, n_patches,
                          pixels_per_patch, patch_width, patch_height, sim):
     """
@@ -17,7 +17,7 @@ def emd_scoring_function(real_images_preloaded, batch_size, qc,
     distributions are identical. Note: EMD has no upper bound.
 
     :param real_images_preloaded: tensor. Preloaded real images.
-    :param batch_size: int. The number of images to generate and evaluate in one batch.
+    :param num_images_to_compare: int. The number of images used to calculate em-distance.
     :param qc: qiskit.circuit.quantumcircuit.QuantumCircuit. The qc that generates images.
     :param n_tot_qubits: int. The total number of qubits in the quantum circuit.
     :param n_ancillas: int. The number of ancillary qubits in the quantum circuit.
@@ -31,7 +31,7 @@ def emd_scoring_function(real_images_preloaded, batch_size, qc,
     """
     generated_images_list = []
     if n_patches > 1:
-        for batch_index in range(batch_size):
+        for batch_index in range(num_images_to_compare):
             generated_image = from_probs_to_pixels(quantum_circuit=qc,
                                                    n_tot_qubits=n_tot_qubits,
                                                    n_ancillas=n_ancillas,
@@ -41,7 +41,7 @@ def emd_scoring_function(real_images_preloaded, batch_size, qc,
             generated_images_list.append(generated_image)
 
     else:
-        for batch_index in range(batch_size):
+        for batch_index in range(num_images_to_compare):
             generated_image = from_patches_to_image(quantum_circuit=qc,
                                                     n_tot_qubits=n_tot_qubits,
                                                     n_ancillas=n_ancillas,
@@ -52,16 +52,21 @@ def emd_scoring_function(real_images_preloaded, batch_size, qc,
                                                     sim=sim)
             generated_images_list.append(generated_image)
 
-    real_images_tensor = real_images_preloaded
+    real_images_tensor = torch.stack(real_images_preloaded, dim=0)
     generated_images_tensor = torch.stack([torch.from_numpy(image).float() for image in generated_images_list])
 
-    real_images_flat = real_images_tensor.view(real_images_tensor.size(0), -1)
-    generated_images_flat = generated_images_tensor.view(generated_images_tensor.size(0), -1)
+    real_images_flat = real_images_tensor.reshape(num_images_to_compare, -1)
+    generated_images_flat = generated_images_tensor.reshape(num_images_to_compare, -1)
 
-    generated_images_flat_np = generated_images_flat.cpu().detach().numpy()
-    real_images_flat_np = real_images_flat.cpu().detach().numpy()
+    # real_images_flat_np = real_images_flat.cpu().detach().numpy()
+    # generated_images_flat_np = generated_images_flat.cpu().detach().numpy()
 
-    distance_real_gen = scipy.stats.wasserstein_distance(real_images_flat_np.flatten(),
-                                                         generated_images_flat_np.flatten())
+    # wasserstein_distance_nd expects tensors or vectors shaped so that each row is a vector
+    # observation or possible value (so in this case an flattened image or patch), and each
+    # column, so the second dimension, is the number of samples. For example, when measuring the
+    # distance between two batches of 25 patches of size (2x28), the vectors should have shape
+    # (25, 56), so 25 rows of 56 pixels each
+    distance_real_gen = wasserstein_distance_nd(u_values=real_images_flat,
+                                                v_values=generated_images_flat)
 
     return distance_real_gen
