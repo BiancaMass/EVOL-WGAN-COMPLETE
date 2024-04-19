@@ -26,6 +26,8 @@ that you are automatically in at start-up:
 
 - Install requirements
 - `pip install -r requirements.txt`
+  
+May be necessary to
 - `pip install pennylane`
 - `pip install qiskit`
 

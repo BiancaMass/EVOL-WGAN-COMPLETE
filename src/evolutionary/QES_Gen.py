@@ -506,7 +506,7 @@ class Qes:
         metadata = {
             "N Data Qubits": self.n_data_qubits,
             "N Ancilla": self.n_ancilla,
-            "Image Shape": (self.patch_height, self.patch_width),
+            "Patch Shape": (self.patch_height, self.patch_width),
             "Batch Size": self.evol_batch_size,
             "N Children": self.n_children,
             "Max Evaluations": self.n_max_evaluations,
@@ -515,7 +515,13 @@ class Qes:
             "Action Weights": self.action_weights,
             "Multi Action Probability": self.multi_action_pb,
             "Max Generations No Improvement": self.max_gen_until_change,
-            "Max Depth": self.max_depth,
+            "Max Generations Until Change": self.max_gen_until_change,
+            "Generation Saving Frequency": self.gen_saving_frequency,
+            "Output Directory": self.output_dir,
+            "Device": self.device,
+            "Patch for Evaluation": self.patch_for_evaluation,
+            "Number Images to Compare": self.number_images_to_compare,
+            "Max Depth": self.max_depth
         }
 
         # Look if the output directory exists, if not, create it
