@@ -9,7 +9,7 @@ OUTPUT_DIR = os.path.join(f"./output/{STRING_TIME}/")
 EVOLUTIONARY_OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'evol')
 GAN_OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'gan')
 
-INPUT_DIR = os.path.join('..', "input")
+INPUT_DIR = os.path.join(f'./input')
 DATASET_DIR = os.path.join(INPUT_DIR, 'datasets')
 
 # TODO: adjust from gan

@@ -26,7 +26,8 @@ def main():
         os.makedirs(gan_output_dir)
         print(f"GAN output directory created: {gan_output_dir}")
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = 'cpu'
     print(f'Using device: {device}')
 
     num_workers = 0 if device == 'cpu' else 8 if device == 'cuda' else 0
