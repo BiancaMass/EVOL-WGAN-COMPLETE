@@ -10,3 +10,7 @@ venvs/
 
 # Pycahrm IDE folder (Jetbrains)
 .idea/
+
+# DSRI folders
+/root/EVOL-WGAN-COMPLETE-1/venv1
+
