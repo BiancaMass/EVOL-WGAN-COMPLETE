@@ -6,10 +6,10 @@ def denorm(x):
     normal pixel value interval for grayscale images [0, 1] before saving to local storage.
 
     First checks if the input tensor or value `x` is between [-1, 1]. If not, Assertion Error.
-    Args:
-        x (torch.Tensor): The tensor or value to be denormalized.
-    Returns:
-        torch.Tensor: The denormalized tensor or value, clamped between 0 and 1.
+
+    :param x: torch.Tensor. The tensor or value to be denormalized.
+
+    :returns torch.Tensor: The denormalized tensor or value, clamped between 0 and 1.
     """
     # Make sure x is within [-1, 1]
     assert x.min() >= -1 and x.max() <= 1, "Input value(s) must be within the range [-1, 1]."
