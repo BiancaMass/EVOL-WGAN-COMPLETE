@@ -13,8 +13,6 @@ INPUT_DIR = os.path.join('..', "input")
 DATASET_DIR = os.path.join(INPUT_DIR, 'datasets')
 
 # TODO: adjust from gan
-# INPUT_FOLDER = "/Users/bmassacci/main_folder/maastricht/academics/quantum_thesis/scripts/B-WGAN" \
-#                "-Evol/input/24_03_26_19_16_14/"
 #
 # QASM_FILE_PATH= INPUT_FOLDER + "final_best_circuit.qasm"
 # METADATA_FILE_PATH = INPUT_FOLDER + "metadata.csv"
