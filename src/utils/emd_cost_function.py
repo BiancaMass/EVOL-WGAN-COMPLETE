@@ -66,6 +66,10 @@ def emd_scoring_function(real_images_preloaded, num_images_to_compare, qc,
     # column, so the second dimension, is the number of samples. For example, when measuring the
     # distance between two batches of 25 patches of size (2x28), the vectors should have shape
     # (25, 56), so 25 rows of 56 pixels each
+
+    if real_images_flat.shape != generated_images_flat.shape:
+        print("Warning: The input tensors used for EMD calculations do not have the same shape.")
+
     distance_real_gen = wasserstein_distance_nd(u_values=real_images_flat,
                                                 v_values=generated_images_flat)
 

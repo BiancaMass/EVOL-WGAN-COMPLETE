@@ -31,14 +31,13 @@ def get_probabilities(quantum_circuit, n_tot_qubits, sim):
 
 def from_probs_to_pixels(quantum_circuit, n_tot_qubits, n_ancillas, sim):
     """
-    # TODO: review documentation
     Converts quantum circuit probabilities to normalized pixel values.
 
     1. Calculates the probabilities of quantum states in a given circuit.
     2. Processes these probabilities to generate normalized pixel values, excluding ancilla qubit
-    values, so that the vector becomes of length of number of wanted pixels for this patch.
+    values to introduce non-linearity
     3. Ensures the sum of probabilities equals 1.
-    4. Normalizes the final pixel values between -1 and 1.
+    4. Normalizes the final pixel values between -1 and 1 as required for the GAN images
 
     :param quantum_circuit: qiskit.circuit.quantumcircuit.QuantumCircuit. The quantum circuit to be executed.
     :param n_tot_qubits: int. Total number of qubits in the circuit.

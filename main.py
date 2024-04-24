@@ -51,7 +51,7 @@ def main():
     evol_batch_subset = es_configs.BATCH_SUBSET
     n_children = es_configs.N_CHILDREN
     n_max_evaluations = es_configs.M_MAX_EVALUATIONS
-    shots = es_configs.SHOTS
+    # shots = es_configs.SHOTS
     dtheta = es_configs.DTHETA
     patch_for_evaluation = es_configs.PATCH_FOR_EVALUATION
     action_weights = es_configs.ACTION_WEIGHTS
@@ -107,7 +107,7 @@ def main():
         'action_weights': action_weights,
         'multi_action_pb': multi_action_pb,
         'patch_for_evaluation': patch_for_evaluation,
-        'shots': shots,
+        # 'shots': shots,
         'device': device,
         'max_gen_until_change': max_gen_until_change,
         'max_gen_no_improvement': max_gen_no_improvement,

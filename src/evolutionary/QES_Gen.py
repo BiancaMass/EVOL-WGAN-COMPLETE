@@ -23,7 +23,7 @@ class Qes:
     def __init__(self, n_data_qubits, n_ancilla, patch_shape, pixels_per_patch, n_patches,
                  dataloader, evol_batch_size, n_batches, batch_subset, classes,
                  n_children, n_max_evaluations, dtheta, action_weights, multi_action_pb,
-                 patch_for_evaluation, shots, device,
+                 patch_for_evaluation, device,
                  max_gen_until_change, max_gen_no_improvement, gen_saving_frequency,
                  output_dir, **kwargs):
 
@@ -49,7 +49,6 @@ class Qes:
             'random', and the patches are generated randomly for each image. If int, then indicates
             the top row of the patch. e.g., 3 will take the patch that starts from the 3rd row of
             the image until the row 3 + patch_height.
-        :param shots: integer. Number of executions on the circuit to get the prob. distribution.
         :param device: The computation device (e.g., 'cpu', 'cuda').
         :param max_gen_until_change: int. If no improvement for these many generations, dtheta is
               increased to encourage getting out of a local minima.
@@ -59,6 +58,7 @@ class Qes:
         :keyword max_depth: integer. It fixes an upper bound on the quantum circuits depth (the
               length of the critical path (longest sequence of gates)).
         """
+        # :param shots: integer. Number of executions on the circuit to get the prob. distribution.
         print("Initializing Qes instance")
         # ----- Ansatz Parameters ----- #
         self.n_data_qubits = n_data_qubits
@@ -76,7 +76,7 @@ class Qes:
         # ----- Evolutionary Parameters ----- #
         self.n_children = n_children
         self.n_max_evaluations = n_max_evaluations
-        self.shots = shots
+        # self.shots = shots
         self.dtheta = dtheta
         self.action_weights = action_weights
         self.multi_action_pb = multi_action_pb
@@ -98,6 +98,7 @@ class Qes:
 
         # -------------------------------------------- #
         # CREATE THE 0-TH INDIVIDUAL (QUANTUM CIRCUIT)
+        # TODO: also try over [0, pi/2]  and [-pi, pi]
         self.latent_vector_0 = np.random.rand(self.n_tot_qubits)
 
         qc_0 = QuantumCircuit(QuantumRegister(self.n_tot_qubits, 'qubit'))
@@ -158,7 +159,6 @@ class Qes:
         - n_children: {self.n_children}
         - n_max_evaluations: {self.n_max_evaluations}
         - n_generations: {self.n_generations}
-        - shots: {self.shots}
         - device: '{self.device}'
         - dtheta: {self.dtheta}
         - action_weights: {self.action_weights}
@@ -166,6 +166,8 @@ class Qes:
         - max_gen_until_change: {self.max_gen_until_change}
         - output directory: {self.output_dir}
         """)
+
+        # - shots: {self.shots}
 
     def action(self):
         """
@@ -187,11 +189,13 @@ class Qes:
                     counter = 1  # set counter to 1, i.e., only apply one action to the circuit
                     self.counting_multi_action = 0  # to avoid additional actions to be applied
                 else:
-                    # apply *at least* one action
-                    counter = self.multiaction().counting_multi_action + 1
+                    # add 1 extra action with prob. multiaction_prob (so usually 1 action, 2
+                    # actions with prob 10% or whatever muliaction_prob is)
+                    counter = 1 + self.multiaction().counting_multi_action
             else:
-                # apply *at least* one action
-                counter = self.multiaction().counting_multi_action + 1
+                # add 1 extra action with prob. multiaction_prob (so usually 1 action, 2
+                # actions with prob 10% or whatever muliaction_prob is)
+                counter = 1 + self.multiaction().counting_multi_action
 
             self.act_choice = random.choices(['A', 'D', 'S', 'M'], weights=self.action_weights,
                                              k=counter)  # outputs a list of k-number of actions
@@ -232,13 +236,15 @@ class Qes:
                         pass
 
                 elif self.act_choice[j] == 'S':
+                    # Picks a gate and substitutes it with a gate from the family chosen at random
+
                     # Control if there are enough gates in the circuit to perform a SWAP
                     if len(qc.data) - 1 - self.n_tot_qubits > 0:
-                        # Pick a position for the gate to swap
+                        # Pick a position for the gate to remove and replace
                         # Exclude the the first n_tot_qubits gates (encoding gates)
                         position = random.randint(self.n_tot_qubits, len(qc.data) - 2)
                         remove_ok = True
-                    else:  # Handle the case where there are not enough gates to swap
+                    else:  # Handle the case where there are not enough gates to perform a SWAP
                         remove_ok = False
 
                     if remove_ok:
@@ -249,28 +255,32 @@ class Qes:
                         while gate_to_add.__name__ == gate_to_remove.name:
                             gate_to_add = random.choice(list(gate_dict.values()))
                         if gate_to_add.__name__ == 'CXGate':
-                            n_qubits = 2
+                            n_new_qubits = 2
                             gate_to_add = gate_to_add()
                         elif gate_to_add.__name__ == 'UGate':
-                            n_qubits = 1
+                            n_new_qubits = 1
                             gate_to_add = gate_to_add(angle1, angle2, angle3)
                         else:
                             print('Error: swap gate not in gate list')
-                        # number of qubits affected by the gate to be swapped
-                        length = len(qc.data[position][1])
-                        # if we are swapping gates with the same amount of qubits
-                        if length == n_qubits:
+                        # number of qubits of the gate we are removing
+                        n_old_qubits = len(qc.data[position][1])
+                        # if we are swapping gates with the same amount of qubits, use the same
+                        # qubits as the gate we are removing.
+                        if n_old_qubits == n_new_qubits:
                             element_to_remove = list(qc.data[position])
                             element_to_remove[0] = gate_to_add  # swap the gates
                             element_to_add = tuple(element_to_remove)
                             qc.data[position] = element_to_add
-                        elif length > n_qubits:
+                        # If gate we are removing has more qubits, pick the qubits from the new
+                        # gate as a subset from the original qubits
+                        elif n_old_qubits > n_new_qubits:
                             element_to_remove = list(qc.data[position])
                             element_to_remove[0] = gate_to_add
                             element_to_remove[1] = [random.choice(qc.data[position][1])]
                             element_to_add = tuple(element_to_remove)
                             qc.data[position] = element_to_add
-                        elif length < n_qubits:
+                        # If more qubits in the gate we are adding (swapping old gate with)
+                        elif n_old_qubits < n_new_qubits:
                             element_to_remove = list(qc.data[position])
                             element_to_remove[0] = gate_to_add
                             qubits_available = []
@@ -284,6 +294,7 @@ class Qes:
                             qc.data[position] = element_to_add
 
                 elif self.act_choice[j] == 'M':
+                    # Changes the angle of the selected qubit
                     to_select = 'u'
                     gates_to_mutate = [i for i, gate in enumerate(qc.data[self.n_tot_qubits:],
                                                                   start=self.n_tot_qubits)
@@ -292,15 +303,14 @@ class Qes:
                     if gates_to_mutate:
                         position = random.choice(gates_to_mutate)
                         gate_to_mutate = qc.data[position]
+                        # Because U has three parameters
                         angle_to_mutate = random.randint(0, 2)
-                        angle_new = gate_to_mutate[0].params[angle_to_mutate] + random.uniform(0,
-                                                                                               self.dtheta)
+                        angle_new = gate_to_mutate[0].params[angle_to_mutate] +       \
+                                    random.uniform(-self.dtheta, self.dtheta)
                         gate_to_mutate[0].params[angle_to_mutate] = angle_new
                     else:  # Skip action if no mutable gates (parameterized) are available
                         pass
 
-                # In case of multiactions we are appending more circuits to the population,
-                # if you don't want that put the next code line outside of the for loop on counter
             population.append(qc)
         self.population = population
         return self
@@ -369,7 +379,7 @@ class Qes:
             del self.candidate_sol[0]
             del self.population[0]
 
-        for i in range(len(self.candidate_sol)):
+        for i in range(len(self.population)):
             # random.sample samples without replacement. random.choice samples with replacement
             selected_batch = random.sample(self.cropped_real_images, self.number_images_to_compare)
             try:
@@ -402,11 +412,14 @@ class Qes:
         """
         self.counting_multi_action = 0
         rand = random.uniform(0, 1)
-        if rand < self.multi_action_pb:
-            self.counting_multi_action += 1
-        # while rand < self.multi_action_pb:  # old code that incresed with a different probability
+        # To increase only by 1 with prob = multi_action_pb
+        # if rand < self.multi_action_pb:
         #     self.counting_multi_action += 1
-        #     rand = random.uniform(0, 1)
+        # To increase many times, each time with prob multi_action_prob, until it does not anymore
+        # i.e. it increases e.g., 3 times with prob multi_action_prob**3
+        while rand < self.multi_action_pb:
+            self.counting_multi_action += 1
+            rand = random.uniform(0, 1)
         return self
 
     def evolution(self):
@@ -433,7 +446,7 @@ class Qes:
 
                 index = np.argmin(self.fitnesses)  # index of the best (smallest) fitness value
                 # self.fitnesses is the list of fitness values for the current generation
-                if self.fitnesses[index] < self.best_fitness[g - 1]:
+                if self.fitnesses[index] < self.best_fitness[-1]:
                     print('improvement found')
                     self.best_individuals.append(self.population[index])
                     self.ind = self.population[index]
@@ -466,7 +479,7 @@ class Qes:
                     self.dtheta += 0.1
                     # TODO: increase multi action prob
                     # Another way would be to increase self.multi_action_pb
-                elif self.no_improvements == 0:
+                elif self.no_improvements == 0:  # else reset theta to normal
                     self.dtheta = theta_default
                 # Termination criteria
                 if self.no_improvements == self.max_gen_no_improvement:
@@ -510,7 +523,7 @@ class Qes:
             "Batch Size": self.evol_batch_size,
             "N Children": self.n_children,
             "Max Evaluations": self.n_max_evaluations,
-            "Shots": self.shots,
+            # "Shots": self.shots,
             "DTheta": self.dtheta,
             "Action Weights": self.action_weights,
             "Multi Action Probability": self.multi_action_pb,
