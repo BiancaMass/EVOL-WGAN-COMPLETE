@@ -20,11 +20,10 @@ DATASET_DIR = os.path.join(INPUT_DIR, 'datasets')
 # --------------------------------
 #      INPUT DATA PARAMETERS
 # --------------------------------
-GAN_TRAIN_SIZE = 800
-GAN_VALID_SIZE = 200
-EVOL_TRAIN_SIZE = 300
+GAN_TRAIN_SIZE = 1000
+GAN_VALID_SIZE = 250
+EVOL_TRAIN_SIZE = 400
 EVOL_VALID_SIZE = 100
-
 
 # --------------------------------
 #        IMAGE PARAMETERS
