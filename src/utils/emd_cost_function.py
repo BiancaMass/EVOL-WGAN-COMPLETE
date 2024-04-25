@@ -1,7 +1,8 @@
-import scipy
+from numpy import random
 from scipy.stats import wasserstein_distance_nd
 import torch
 
+from src.utils.evol_utils.state_embedding import state_embedding
 from src.evolutionary.nets.generator_methods import from_patches_to_image, from_probs_to_pixels
 
 
@@ -32,7 +33,9 @@ def emd_scoring_function(real_images_preloaded, num_images_to_compare, qc,
     generated_images_list = []
     if n_patches > 1:
         for batch_index in range(num_images_to_compare):
-            generated_image = from_probs_to_pixels(quantum_circuit=qc,
+            current_latent = random.rand(n_tot_qubits)
+            qc_with_embedding = state_embedding(qc, n_tot_qubits, current_latent)
+            generated_image = from_probs_to_pixels(quantum_circuit=qc_with_embedding,
                                                    n_tot_qubits=n_tot_qubits,
                                                    n_ancillas=n_ancillas,
                                                    sim=sim)[:pixels_per_patch]
@@ -42,7 +45,9 @@ def emd_scoring_function(real_images_preloaded, num_images_to_compare, qc,
 
     else:
         for batch_index in range(num_images_to_compare):
-            generated_image = from_patches_to_image(quantum_circuit=qc,
+            current_latent = random.rand(n_tot_qubits)
+            qc_with_embedding = state_embedding(qc, n_tot_qubits, current_latent)
+            generated_image = from_patches_to_image(quantum_circuit=qc_with_embedding,
                                                     n_tot_qubits=n_tot_qubits,
                                                     n_ancillas=n_ancillas,
                                                     n_patches=n_patches,

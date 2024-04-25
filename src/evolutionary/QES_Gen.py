@@ -9,6 +9,7 @@ from qiskit import QuantumCircuit, QuantumRegister, execute, Aer, IBMQ
 from qiskit.circuit.library import UGate, CXGate
 
 from src.utils.evol_utils.evolutionary_image_utils import crop_images_for_evol
+from src.utils.evol_utils.state_embedding import state_embedding
 
 from src.evolutionary.nets.generator_methods import from_patches_to_image, from_probs_to_pixels
 from src.utils.emd_cost_function import emd_scoring_function
@@ -99,12 +100,15 @@ class Qes:
         # -------------------------------------------- #
         # CREATE THE 0-TH INDIVIDUAL (QUANTUM CIRCUIT)
         # TODO: also try over [0, pi/2]  and [-pi, pi]
-        self.latent_vector_0 = np.random.rand(self.n_tot_qubits)
+        # self.latent_vector_0 = np.random.rand(self.n_tot_qubits)
 
+        # TODO: consider making this into a separate function
+        # Initialize an empty circuit as the first circuit.
+        # Note: state embedding is done separately before calling the evaluation
         qc_0 = QuantumCircuit(QuantumRegister(self.n_tot_qubits, 'qubit'))
         # State embedding: Ry rotation using the latent vector
-        for i in range(self.n_tot_qubits):
-            qc_0.ry(self.latent_vector_0[i], i)
+        # for i in range(self.n_tot_qubits):
+        #     qc_0.ry(self.latent_vector_0[i], i)
         # for qbit in range(self.n_tot_qubits):
         #     qc_0.h(qbit) # Hadamard gates
 
@@ -218,32 +222,40 @@ class Qes:
                     position = random.sample([i for i in range(len(qc.qubits))], k=2)
                     # Choose the type of gate (pick an index for the gates list)
                     choice = random.randint(0, len(gate_list) - 1)
-                    if choice == 0:  # for the rotation gate
-                        # print(f"Adding a {gate_list[choice]} gate at position: {position[0]}")
-                        # u(theta, phi, lambda, qubit)
+                    if choice == 0:  # for the rotation gate u(theta, phi, lambda, qubit)
                         gate_list[choice](angle1, angle2, angle3, position[0])
                     else:
-                        # print(f"Adding a {gate_list[choice]} gate at positions: {position}")
                         gate_list[choice](position[0], position[1])
 
                 elif self.act_choice[j] == 'D':
                     # Pick a position for the gate to remove.
-                    # Exclude the the first n_tot_qubits gates (encoding gates)
-                    if self.n_tot_qubits < len(qc.data) - 1:
-                        position = random.randint(self.n_tot_qubits, len(qc.data) - 1)
+                    if len(qc.data) > 1:
+                        position = random.randint(0, len(qc.data) - 1)
                         qc.data.remove(qc.data[position])
                     else:
                         pass
+                    # TODO delete
+                    # Exclude the the first n_tot_qubits gates (encoding gates) - NOT ANYMORE
+                    # if self.n_tot_qubits < len(qc.data) - 1:
+                    #     position = random.randint(self.n_tot_qubits, len(qc.data) - 1)
+                    #     qc.data.remove(qc.data[position])
 
                 elif self.act_choice[j] == 'S':
                     # Picks a gate and substitutes it with a gate from the family chosen at random
 
                     # Control if there are enough gates in the circuit to perform a SWAP
-                    if len(qc.data) - 1 - self.n_tot_qubits > 0:
+                    # TODO check
+                    if len(qc.data) > 2:
+                        position = random.randint(0, len(qc.data) - 2)
+                        remove_ok = True
+
+                    # TODO: delete
+                    # Control if there are enough gates in the circuit to perform a SWAP
+                    # if len(qc.data) - 1 - self.n_tot_qubits > 0:
                         # Pick a position for the gate to remove and replace
                         # Exclude the the first n_tot_qubits gates (encoding gates)
-                        position = random.randint(self.n_tot_qubits, len(qc.data) - 2)
-                        remove_ok = True
+                        # position = random.randint(self.n_tot_qubits, len(qc.data) - 2)
+
                     else:  # Handle the case where there are not enough gates to perform a SWAP
                         remove_ok = False
 
@@ -296,9 +308,12 @@ class Qes:
                 elif self.act_choice[j] == 'M':
                     # Changes the angle of the selected qubit
                     to_select = 'u'
-                    gates_to_mutate = [i for i, gate in enumerate(qc.data[self.n_tot_qubits:],
-                                                                  start=self.n_tot_qubits)
+                    gates_to_mutate = [i for i, gate in enumerate(qc.data[:],start=0)
                                        if gate[0].name == to_select]
+                    # TODO: delete
+                    # gates_to_mutate = [i for i, gate in enumerate(qc.data[self.n_tot_qubits:],
+                    #                                               start=self.n_tot_qubits)
+                    #                    if gate[0].name == to_select]
 
                     if gates_to_mutate:
                         position = random.choice(gates_to_mutate)
@@ -310,6 +325,8 @@ class Qes:
                         gate_to_mutate[0].params[angle_to_mutate] = angle_new
                     else:  # Skip action if no mutable gates (parameterized) are available
                         pass
+
+                # print(f"circuit after action: {self.act_choice[j]} \n", qc)
 
             population.append(qc)
         self.population = population
@@ -323,8 +340,10 @@ class Qes:
 
         for j in range(len(self.population)):
             qc = self.population[j].copy()
+            current_latent = np.random.rand(self.n_tot_qubits)
+            qc_with_embedding = state_embedding(qc, self.n_tot_qubits, current_latent)
             if self.n_patches > 1:
-                resulting_image = from_probs_to_pixels(quantum_circuit=qc,
+                resulting_image = from_probs_to_pixels(quantum_circuit=qc_with_embedding,
                                                        n_tot_qubits=self.n_tot_qubits,
                                                        n_ancillas=self.n_ancilla,
                                                        sim=self.sim)[:self.pixels_per_patch]
@@ -332,7 +351,7 @@ class Qes:
                 resulting_image = torch.reshape(torch.from_numpy(resulting_image),
                                                 (1, self.patch_height, self.patch_width))
             else:
-                resulting_image = from_patches_to_image(quantum_circuit=qc,
+                resulting_image = from_patches_to_image(quantum_circuit=qc_with_embedding,
                                                         n_tot_qubits=self.n_tot_qubits,
                                                         n_ancillas=self.n_ancilla,
                                                         n_patches=self.n_patches,
@@ -412,11 +431,7 @@ class Qes:
         """
         self.counting_multi_action = 0
         rand = random.uniform(0, 1)
-        # To increase only by 1 with prob = multi_action_pb
-        # if rand < self.multi_action_pb:
-        #     self.counting_multi_action += 1
-        # To increase many times, each time with prob multi_action_prob, until it does not anymore
-        # i.e. it increases e.g., 3 times with prob multi_action_prob**3
+        # Increase k time with prob (1-p)*p^3 where p is multi_action_prob
         while rand < self.multi_action_pb:
             self.counting_multi_action += 1
             rand = random.uniform(0, 1)
@@ -514,7 +529,11 @@ class Qes:
                     "Depth", "Best Actions", "Best Fitness", "Final Best Fitness"]
 
         # Quantum circuit as qasm file
-        qasm_best_end = algo.best_individuals[-1].qasm()
+        # TODO: or remove the whole stripping and re-adding layer in the GAN!
+        qc = algo.best_individuals[-1].copy()
+        current_latent = np.random.rand(self.n_tot_qubits)
+        qc_with_embedding = state_embedding(qc, self.n_tot_qubits, current_latent)
+        qasm_best_end = qc_with_embedding.qasm()
 
         metadata = {
             "N Data Qubits": self.n_data_qubits,
@@ -523,7 +542,6 @@ class Qes:
             "Batch Size": self.evol_batch_size,
             "N Children": self.n_children,
             "Max Evaluations": self.n_max_evaluations,
-            # "Shots": self.shots,
             "DTheta": self.dtheta,
             "Action Weights": self.action_weights,
             "Multi Action Probability": self.multi_action_pb,
