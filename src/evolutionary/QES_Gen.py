@@ -9,7 +9,7 @@ from qiskit import QuantumCircuit, QuantumRegister, execute, Aer, IBMQ
 from qiskit.circuit.library import UGate, CXGate
 
 from src.utils.evol_utils.evolutionary_image_utils import crop_images_for_evol
-from src.utils.evol_utils.state_embedding import state_embedding
+from src.utils.evol_utils.state_embedding import state_embedding, latent_creation
 
 from src.evolutionary.nets.generator_methods import from_patches_to_image, from_probs_to_pixels
 from src.utils.emd_cost_function import emd_scoring_function
@@ -59,7 +59,6 @@ class Qes:
         :keyword max_depth: integer. It fixes an upper bound on the quantum circuits depth (the
               length of the critical path (longest sequence of gates)).
         """
-        # :param shots: integer. Number of executions on the circuit to get the prob. distribution.
         print("Initializing Qes instance")
         # ----- Ansatz Parameters ----- #
         self.n_data_qubits = n_data_qubits
@@ -77,7 +76,6 @@ class Qes:
         # ----- Evolutionary Parameters ----- #
         self.n_children = n_children
         self.n_max_evaluations = n_max_evaluations
-        # self.shots = shots
         self.dtheta = dtheta
         self.action_weights = action_weights
         self.multi_action_pb = multi_action_pb
@@ -99,16 +97,8 @@ class Qes:
 
         # -------------------------------------------- #
         # CREATE THE 0-TH INDIVIDUAL (QUANTUM CIRCUIT)
-        # TODO: also try over [0, pi/2]  and [-pi, pi]
-        # self.latent_vector_0 = np.random.rand(self.n_tot_qubits)
-
-        # TODO: consider making this into a separate function
-        # Initialize an empty circuit as the first circuit.
         # Note: state embedding is done separately before calling the evaluation
         qc_0 = QuantumCircuit(QuantumRegister(self.n_tot_qubits, 'qubit'))
-        # State embedding: Ry rotation using the latent vector
-        # for i in range(self.n_tot_qubits):
-        #     qc_0.ry(self.latent_vector_0[i], i)
         # for qbit in range(self.n_tot_qubits):
         #     qc_0.h(qbit) # Hadamard gates
 
@@ -170,8 +160,6 @@ class Qes:
         - max_gen_until_change: {self.max_gen_until_change}
         - output directory: {self.output_dir}
         """)
-
-        # - shots: {self.shots}
 
     def action(self):
         """
@@ -340,8 +328,7 @@ class Qes:
 
         for j in range(len(self.population)):
             qc = self.population[j].copy()
-            current_latent = np.random.rand(self.n_tot_qubits)
-            qc_with_embedding = state_embedding(qc, self.n_tot_qubits, current_latent)
+            qc_with_embedding = state_embedding(qc, self.n_tot_qubits, latent_creation(self.n_tot_qubits))
             if self.n_patches > 1:
                 resulting_image = from_probs_to_pixels(quantum_circuit=qc_with_embedding,
                                                        n_tot_qubits=self.n_tot_qubits,
@@ -529,10 +516,11 @@ class Qes:
                     "Depth", "Best Actions", "Best Fitness", "Final Best Fitness"]
 
         # Quantum circuit as qasm file
-        # TODO: or remove the whole stripping and re-adding layer in the GAN!
+        # TODO: or you could remove the whole stripping and re-adding layer in the GAN
+        # So basically save without embedding, and remove the part in the GAN wheree you remove
+        # the embedding layer
         qc = algo.best_individuals[-1].copy()
-        current_latent = np.random.rand(self.n_tot_qubits)
-        qc_with_embedding = state_embedding(qc, self.n_tot_qubits, current_latent)
+        qc_with_embedding = state_embedding(qc, self.n_tot_qubits, latent_creation(self.n_tot_qubits))
         qasm_best_end = qc_with_embedding.qasm()
 
         metadata = {

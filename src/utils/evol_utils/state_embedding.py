@@ -1,3 +1,4 @@
+from numpy import random
 from qiskit import QuantumCircuit, QuantumRegister
 
 
@@ -20,3 +21,7 @@ def state_embedding(circuit, n_tot_qubits, latent_vector):
     complete_circuit = embedding_layer.compose(circuit, front=True)
 
     return complete_circuit
+
+
+def latent_creation(n_qubits):
+    return random.rand(n_qubits)
