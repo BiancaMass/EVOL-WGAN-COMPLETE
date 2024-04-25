@@ -14,6 +14,7 @@ from src.utils.evol_utils.state_embedding import state_embedding, latent_creatio
 from src.evolutionary.nets.generator_methods import from_patches_to_image, from_probs_to_pixels
 from src.utils.emd_cost_function import emd_scoring_function
 from src.utils.evol_utils.evol_plotting import save_tensor
+from src.utils.plot_utils.emd_plot_evol import plot_best_fitness
 
 
 class Qes:
@@ -108,15 +109,15 @@ class Qes:
         # Circuits generated in the current generation from the best qc of the previous one
         self.population = [self.ind]
         self.candidate_sol = None  # Candidate images from the the current generation
-        self.fitnesses = None # Fitness values of the candidate solutions in the current generation
+        self.fitnesses = None  # Fitness values of the candidate solutions in the current generation
         self.act_choice = None  # Actions taken in the current generation
 
         # -------------------------------------------- #
         # parameters to store BEST over ALL generations
         self.best_individuals = [qc_0]  # At initialization it is the 0-th circuit
         self.depth = [self.ind.depth()]  # List of circuits depths over the generations
-        self.best_solution = []   # Best image produced
-        self.best_fitness = []    # Best fitness value found over the generations
+        self.best_solution = []  # Best image produced
+        self.best_fitness = []  # Best fitness value found over the generations
         self.best_actions = None  # Best actions taken over the generations
 
         self.no_improvements = 0  # Number of generations without improvements found
@@ -240,9 +241,9 @@ class Qes:
                     # TODO: delete
                     # Control if there are enough gates in the circuit to perform a SWAP
                     # if len(qc.data) - 1 - self.n_tot_qubits > 0:
-                        # Pick a position for the gate to remove and replace
-                        # Exclude the the first n_tot_qubits gates (encoding gates)
-                        # position = random.randint(self.n_tot_qubits, len(qc.data) - 2)
+                    # Pick a position for the gate to remove and replace
+                    # Exclude the the first n_tot_qubits gates (encoding gates)
+                    # position = random.randint(self.n_tot_qubits, len(qc.data) - 2)
 
                     else:  # Handle the case where there are not enough gates to perform a SWAP
                         remove_ok = False
@@ -296,7 +297,7 @@ class Qes:
                 elif self.act_choice[j] == 'M':
                     # Changes the angle of the selected qubit
                     to_select = 'u'
-                    gates_to_mutate = [i for i, gate in enumerate(qc.data[:],start=0)
+                    gates_to_mutate = [i for i, gate in enumerate(qc.data[:], start=0)
                                        if gate[0].name == to_select]
                     # TODO: delete
                     # gates_to_mutate = [i for i, gate in enumerate(qc.data[self.n_tot_qubits:],
@@ -308,7 +309,7 @@ class Qes:
                         gate_to_mutate = qc.data[position]
                         # Because U has three parameters
                         angle_to_mutate = random.randint(0, 2)
-                        angle_new = gate_to_mutate[0].params[angle_to_mutate] +       \
+                        angle_new = gate_to_mutate[0].params[angle_to_mutate] + \
                                     random.uniform(-self.dtheta, self.dtheta)
                         gate_to_mutate[0].params[angle_to_mutate] = angle_new
                     else:  # Skip action if no mutable gates (parameterized) are available
@@ -328,7 +329,8 @@ class Qes:
 
         for j in range(len(self.population)):
             qc = self.population[j].copy()
-            qc_with_embedding = state_embedding(qc, self.n_tot_qubits, latent_creation(self.n_tot_qubits))
+            qc_with_embedding = state_embedding(qc, self.n_tot_qubits,
+                                                latent_creation(self.n_tot_qubits))
             if self.n_patches > 1:
                 resulting_image = from_probs_to_pixels(quantum_circuit=qc_with_embedding,
                                                        n_tot_qubits=self.n_tot_qubits,
@@ -368,16 +370,16 @@ class Qes:
             selected_batch = random.sample(self.cropped_real_images, self.number_images_to_compare)
             try:
                 self.best_fitness[-1] = emd_scoring_function(
-                                            real_images_preloaded=selected_batch,
-                                            num_images_to_compare=self.number_images_to_compare,
-                                            qc=self.population[0],
-                                            n_tot_qubits=self.n_tot_qubits,
-                                            n_ancillas=self.n_ancilla,
-                                            n_patches=self.n_patches,
-                                            pixels_per_patch=self.pixels_per_patch,
-                                            patch_width=self.patch_width,
-                                            patch_height=self.patch_height,
-                                            sim=self.sim)
+                    real_images_preloaded=selected_batch,
+                    num_images_to_compare=self.number_images_to_compare,
+                    qc=self.population[0],
+                    n_tot_qubits=self.n_tot_qubits,
+                    n_ancillas=self.n_ancilla,
+                    n_patches=self.n_patches,
+                    pixels_per_patch=self.pixels_per_patch,
+                    patch_width=self.patch_width,
+                    patch_height=self.patch_height,
+                    sim=self.sim)
             except Exception as e:
                 print(f"An error occurred during fitness function evaluation: {e}")
 
@@ -506,6 +508,13 @@ class Qes:
     def data(self):
         """ It stores all the data required of the algorithm during the evolution"""
         algo = self.evolution()
+
+        # Look if the output directory exists, if not, create it
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        # ------------- Save output data file -------------
+
         self.output = [algo.best_solution, algo.best_individuals[0], algo.best_individuals[-1],
                        algo.depth,
                        algo.best_actions, algo.best_fitness,
@@ -515,13 +524,47 @@ class Qes:
         headings = ["Best Solution", "Best Individual - Start", "Best Individual - End",
                     "Depth", "Best Actions", "Best Fitness", "Final Best Fitness"]
 
+        longest_list = max(self.output, key=lambda x: len(x) if isinstance(x, list) else 1)
+        num_rows = len(longest_list) if isinstance(longest_list, list) else 1
+
+        columns = []
+        for item in self.output:
+            if isinstance(item, list):
+                # If it's a list, we extend it to match the number of rows
+                columns.append(item + [None] * (num_rows - len(item)))
+            else:
+                # If it's a single value, we repeat it to match the number of rows
+                columns.append([item] * num_rows)
+
+        filename_csv = os.path.join(self.output_dir, f"{self.n_children}_"
+                                                     f"{self.n_generations}_{self.max_depth}_"
+                                                     f"{self.n_patches}_{self.n_tot_qubits}_"
+                                                     f"{self.n_ancilla}.csv")
+
+        # Write the data to the CSV file
+        with open(filename_csv, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(headings)
+            writer.writerows(zip(*columns))
+
+        plot_best_fitness(filename_csv, os.path.join(self.output_dir, 'emd_plot.png'))
+
+        # ------------- SAVE CIRCUIT  -------------
         # Quantum circuit as qasm file
         # TODO: or you could remove the whole stripping and re-adding layer in the GAN
         # So basically save without embedding, and remove the part in the GAN wheree you remove
         # the embedding layer
         qc = algo.best_individuals[-1].copy()
-        qc_with_embedding = state_embedding(qc, self.n_tot_qubits, latent_creation(self.n_tot_qubits))
+        qc_with_embedding = state_embedding(qc, self.n_tot_qubits,
+                                            latent_creation(self.n_tot_qubits))
         qasm_best_end = qc_with_embedding.qasm()
+
+        filename_qasm = os.path.join(self.output_dir, f'final_best_circuit.qasm')
+
+        with open(filename_qasm, "w") as file:
+            file.write(qasm_best_end)
+
+        # ------------- Save Metadata files -------------
 
         metadata = {
             "N Data Qubits": self.n_data_qubits,
@@ -543,31 +586,8 @@ class Qes:
             "Max Depth": self.max_depth
         }
 
-        # Look if the output directory exists, if not, create it
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-
-        filename_csv = os.path.join(self.output_dir, f"{self.n_children}_"
-                                                     f"{self.n_generations}_{self.max_depth}_"
-                                                     f"{self.n_patches}_{self.n_tot_qubits}_"
-                                                     f"{self.n_ancilla}.csv")
-
-        filename_qasm = os.path.join(self.output_dir, f'final_best_circuit.qasm')
-
         metadata_filename_txt = os.path.join(self.output_dir, "metadata.txt")
         metadata_filename_csv = os.path.join(self.output_dir, "metadata.csv")
-
-        # Write the data to the CSV file
-        with open(filename_csv, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(headings)
-            # Assuming each entry in self.output is iterable and aligned with the headings
-            writer.writerow(self.output)
-
-        with open(filename_qasm, "w") as file:
-            file.write(qasm_best_end)
-
-        print(f"Output saved to {filename_csv} and {filename_qasm}")
 
         # Write metadata to the file
         with open(metadata_filename_txt, "w") as f:
@@ -581,6 +601,7 @@ class Qes:
             for key, value in metadata.items():
                 writer.writerow([key, value])
 
+        print(f"Output saved to {filename_csv} and {filename_qasm}")
         print(f"Metadata saved to {metadata_filename_txt} and {metadata_filename_csv}")
 
         return self
