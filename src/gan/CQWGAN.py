@@ -123,101 +123,105 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
     batches_done = 0
     g_loss = torch.tensor(0)
     # Just for the first n_critic iterations before it is calculated for the first time
-    for epoch in range(n_epochs):
-        print(f'Epoch number {epoch} \n')
-        for i, (real_images, _) in enumerate(train_dataloader):  # Iterate over batches in the data loader.
+    try:
+        for epoch in range(n_epochs):
+            print(f'Epoch number {epoch} \n')
+            for i, (real_images, _) in enumerate(train_dataloader):  # Iterate over batches in the data loader.
 
-            # Configure input
-            real_images = real_images.to(device)
+                # Configure input
+                real_images = real_images.to(device)
 
-            #########################
-            #  Train Discriminator  #
-            #########################
-            optimizer_D.zero_grad()  # Initialize the critic's optimizer (pytorch zero_grad).
-            # generate a new z at each iteration for variability (explore the input space).
-            z = torch.randn(batch_size, n_tot_qubits, device=device) if normal_latent else \
-                torch.rand(batch_size, n_tot_qubits, device=device)
-            # Give generator latent vector z as input to generate images for the current iteration
-            fake_images = generator(z)
-            # Compute the critic's predictions for real and fake images.
-            real_validity = discriminator(real_images)
-            fake_validity = discriminator(fake_images)
-            # Compute gradient penalty
-            gradient_penalty = compute_gp(discriminator, real_images, fake_images)
-            # Compute Adversarial loss - D wants to minimize it
-
-            mean_real_validity = torch.mean(real_validity)
-            mean_fake_validity = torch.mean(fake_validity)
-
-            d_loss = -mean_real_validity + mean_fake_validity + (lambda_gp * gradient_penalty)
-            # Backpropagate and update the critic's weights.
-            d_loss.backward()
-            optimizer_D.step()
-
-            epoch_history.append(epoch)
-            batch_number_history.append(i)
-            real_validity_history.append(mean_real_validity.item())
-            fake_validity_history.append(mean_fake_validity.item())
-            d_loss_history.append(d_loss.item())
-            gradient_penalty_history.append(gradient_penalty.item())
-            # g_loss will be the same for n_critic steps cause calculated less often
-            g_loss_history.append(g_loss.item())
-
-            estimated_distance = torch.mean(real_validity) - torch.mean(fake_validity)
-            estimated_distance_history.append(estimated_distance.item())
-
-            optimizer_G.zero_grad()  # Initialize the generator's optimizer (pytorch zero_grad).
-
-            if i % n_critic == 0:  # Train the generator every n_critic steps
-
-                #####################
-                #  Train Generator  #
-                #####################
-
-                # Generate a batch of fake images
+                #########################
+                #  Train Discriminator  #
+                #########################
+                optimizer_D.zero_grad()  # Initialize the critic's optimizer (pytorch zero_grad).
+                # generate a new z at each iteration for variability (explore the input space).
+                z = torch.randn(batch_size, n_tot_qubits, device=device) if normal_latent else \
+                    torch.rand(batch_size, n_tot_qubits, device=device)
+                # Give generator latent vector z as input to generate images for the current iteration
                 fake_images = generator(z)
-                # Get discriminator's scores for each of those images
+                # Compute the critic's predictions for real and fake images.
+                real_validity = discriminator(real_images)
                 fake_validity = discriminator(fake_images)
-                # Calculate loss: the generator's ability to fool the discriminator
-                # i.e. the negative value of the scores given by the discriminator because
-                # the smaller the score, the more the generator fooled the discriminator.
-                # G wants to minimize g_loss, D wants to maximize it.
-                g_loss = -torch.mean(fake_validity)
+                # Compute gradient penalty
+                gradient_penalty = compute_gp(discriminator, real_images, fake_images)
+                # Compute Adversarial loss - D wants to minimize it
 
-                # Backpropagate and update the generator's weights
-                g_loss.backward()
-                optimizer_G.step()
+                mean_real_validity = torch.mean(real_validity)
+                mean_fake_validity = torch.mean(fake_validity)
 
-                # Print and log the training progress
-                print(f"[Epoch {epoch}/{n_epochs}] [Batch {i}/{len(train_dataloader)}]"
-                      f"[D loss: {d_loss.item()}] [G loss: {g_loss.item()}]")
+                d_loss = -mean_real_validity + mean_fake_validity + (lambda_gp * gradient_penalty)
+                # Backpropagate and update the critic's weights.
+                d_loss.backward()
+                optimizer_D.step()
 
-                # Save values history
-                data = {
-                    'epoch_n': epoch_history,
-                    'batch_n': batch_number_history,
-                    'real_validity': real_validity_history,
-                    'fake_validity': fake_validity_history,
-                    'd_loss': d_loss_history,
-                    'gradient_penalty': gradient_penalty_history,
-                    'g_loss': g_loss_history,
-                    'estimated_distance': estimated_distance_history
-                }
+                epoch_history.append(epoch)
+                batch_number_history.append(i)
+                real_validity_history.append(mean_real_validity.item())
+                fake_validity_history.append(mean_fake_validity.item())
+                d_loss_history.append(d_loss.item())
+                gradient_penalty_history.append(gradient_penalty.item())
+                # g_loss will be the same for n_critic steps cause calculated less often
+                g_loss_history.append(g_loss.item())
 
-                save_history(data=data, file_path=file_path)
+                estimated_distance = torch.mean(real_validity) - torch.mean(fake_validity)
+                estimated_distance_history.append(estimated_distance.item())
 
-                # Save generated images and model states 4 times less often
-                if i % n_critic * 4 == 0 and batches_done % sample_interval == 0:
-                    save_generated_images(generator=generator,
-                                          latent_vector=initial_latent_vector,
-                                          out_dir=out_folder,
-                                          image_name=f'{batches_done}')
+                optimizer_G.zero_grad()  # Initialize the generator's optimizer (pytorch zero_grad).
 
-                    torch.save(discriminator.state_dict(),
-                               os.path.join(out_folder, 'critic-{}.pt'.format(batches_done)))
-                    torch.save(generator.state_dict(),
-                               os.path.join(out_folder, 'generator-{}.pt'.format(batches_done)))
-                    print("Saved images and state")
+                if i % n_critic == 0:  # Train the generator every n_critic steps
 
-                # Update the total number of batches done
-                batches_done += n_critic
+                    #####################
+                    #  Train Generator  #
+                    #####################
+
+                    # Generate a batch of fake images
+                    fake_images = generator(z)
+                    # Get discriminator's scores for each of those images
+                    fake_validity = discriminator(fake_images)
+                    # Calculate loss: the generator's ability to fool the discriminator
+                    # i.e. the negative value of the scores given by the discriminator because
+                    # the smaller the score, the more the generator fooled the discriminator.
+                    # G wants to minimize g_loss, D wants to maximize it.
+                    g_loss = -torch.mean(fake_validity)
+
+                    # Backpropagate and update the generator's weights
+                    g_loss.backward()
+                    optimizer_G.step()
+
+                    # Print and log the training progress
+                    print(f"[Epoch {epoch}/{n_epochs}] [Batch {i}/{len(train_dataloader)}]"
+                          f"[D loss: {d_loss.item()}] [G loss: {g_loss.item()}]")
+
+                    # Save generated images and model states less often than you train the
+                    # generator (else it's a bit of an overkill of saving)
+                    if i % (n_critic*8) == 0 and batches_done % sample_interval == 0:
+                        # Save values history
+                        data = {
+                            'epoch_n': epoch_history,
+                            'batch_n': batch_number_history,
+                            'real_validity': real_validity_history,
+                            'fake_validity': fake_validity_history,
+                            'd_loss': d_loss_history,
+                            'gradient_penalty': gradient_penalty_history,
+                            'g_loss': g_loss_history,
+                            'estimated_distance': estimated_distance_history
+                        }
+
+                        save_history(data=data, file_path=file_path)
+
+                        save_generated_images(generator=generator,
+                                              latent_vector=initial_latent_vector,
+                                              out_dir=out_folder,
+                                              image_name=f'{batches_done}')
+
+                        torch.save(discriminator.state_dict(),
+                                   os.path.join(out_folder, 'critic-{}.pt'.format(batches_done)))
+                        torch.save(generator.state_dict(),
+                                   os.path.join(out_folder, 'generator-{}.pt'.format(batches_done)))
+                        print("Saved images and state")
+
+                    # Update the total number of batches done
+                    batches_done += n_critic
+    except Exception as e:
+        print(f"An error occurred: {e}")
