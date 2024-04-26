@@ -1,4 +1,3 @@
-# import torch
 import random
 import torchvision.transforms.functional as TF
 
@@ -45,37 +44,5 @@ def crop_images_for_evol(dataloader, patch_position, patch_height, n_batches, de
 
         if i + 1 == n_batches:
             break
-
-    # Tried a more efficient way (above) using crop function
-    # cropped_real_image_batches = []
-    #
-    # if isinstance(patch_position, int):
-    #     for i, (real_images, _) in enumerate(dataloader):
-    #         start_row = patch_position
-    #         end_row = start_row + patch_height
-    #         if end_row < real_images.size(2):
-    #             cropped_images = real_images[:, :, start_row:end_row, :]
-    #             cropped_real_image_batches.append(cropped_images.to(device))
-    #         else:  # just take the top patch in this case
-    #             start_row = 0
-    #             end_row = start_row + patch_height
-    #             cropped_images = real_images[:, :, start_row:end_row, :]
-    #             cropped_real_image_batches.append(cropped_images.to(device))
-    #         if i + 1 == n_batches:
-    #             break
-    #
-    # if patch_position == 'random':
-    #     for i, (real_images, _) in enumerate(dataloader):
-    #         batch_size = real_images.size(0)
-    #         image_height = real_images.size(2)
-    #         max_start_point = image_height - patch_height
-    #         start_rows = torch.randint(0, max_start_point, (batch_size,), device=device)
-    #         # Create a tensor of start indices for cropping
-    #         ranges = [start_rows[j] + torch.arange(patch_height, device=device) for j in range(batch_size)]
-    #         # Create ranges for each image using the starts_tensor
-    #         cropped_images = torch.stack([real_images[j, :, ranges[j], :] for j in range(batch_size)], dim=0)
-    #         cropped_real_image_batches.append(cropped_images.to(device))
-    #         if i + 1 == n_batches:
-    #             break
 
     return cropped_real_image_batches
