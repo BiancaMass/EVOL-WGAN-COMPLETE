@@ -1,4 +1,3 @@
-import torch
 import os
 
 from src.utils.image_utils.data_loader_MNIST import dataloader_mnist
@@ -11,22 +10,19 @@ import configs.config_gan as gan_config
 
 
 def main():
-    # Common parameters
+    # ------------- Create directories for storing OUTPUT -------------
     evol_output_dir = general_configs.EVOLUTIONARY_OUTPUT_DIR
     gan_output_dir = general_configs.GAN_OUTPUT_DIR
-
     dataset_dir = general_configs.DATASET_DIR
 
-    # Create evolutionary output directory
     if not os.path.exists(evol_output_dir):
         os.makedirs(evol_output_dir)
         print(f"Evolutionary output directory created: {evol_output_dir}")
 
-    # Create GAN output directory
     if not os.path.exists(gan_output_dir):
         os.makedirs(gan_output_dir)
         print(f"GAN output directory created: {gan_output_dir}")
-
+    # Note: GPU
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     device = 'cpu'
     print(f'Using device: {device}')
@@ -34,7 +30,8 @@ def main():
     num_workers = 0 if device == 'cpu' else 8 if device == 'cuda' else 0
     print(f"Number of workers selected: {num_workers}")
 
-    # Parameters for both GAN and Evol
+    # ------------------- Initiate Parameters -------------------
+    # Parameters for both GAN and EVOL
     classes = general_configs.CLASSES
     n_data_qubits = general_configs.N_DATA_QUBITS
     n_ancilla = general_configs.N_ANCILLAS
@@ -45,7 +42,7 @@ def main():
     randn_latent = gan_config.RANDN
     n_channels = general_configs.N_CHANNELS
 
-    # Params just for evol
+    # Parameters just for EVOL
     evol_batch_size = es_configs.EVOL_BATCH_SIZE
     evol_n_batches = es_configs.EVOL_N_BATCHES
     evol_batch_subset = es_configs.BATCH_SUBSET
@@ -64,7 +61,7 @@ def main():
     evol_train_size = general_configs.EVOL_TRAIN_SIZE
     evol_val_size = general_configs.EVOL_VALID_SIZE
 
-    # Params just for gan
+    # Parameters just for GAN
     gan_batch_size = gan_config.GAN_BATCH_SIZE
     gan_n_epochs = gan_config.N_EPOCHS
     gan_n_layers = gan_config.N_LAYERS
@@ -72,7 +69,11 @@ def main():
     gan_train_size = general_configs.GAN_TRAIN_SIZE
     gan_val_size = general_configs.GAN_VALID_SIZE
 
-    print("Creating the data loaders")
+    print("Creating the data loaders with the following dimensions:")
+    print(f'EVOL batch size: {evol_batch_size} \n'
+          f'GAN batch size: {gan_batch_size} \n'
+          f'EVOL [training size, validation size]: [{evol_train_size},{evol_val_size}] \n'
+          f'GAN [training size, validation size]: [{gan_train_size},{gan_val_size}]')
     # Load the training and validation images for both algorithms
     train_gan_loader, val_gan_loader, train_evo_loader, val_evo_loader = dataloader_mnist(
         num_workers=num_workers,
@@ -114,11 +115,14 @@ def main():
         'max_depth': max_depth
     }
 
-    print("*** STARTING EVOLUTIONARY SEARCH ***")
+    print("\n*** STARTING EVOLUTIONARY SEARCH ***\n")
     qes = qes_g.Qes(**qes_args)
     # Save the output
+    print("\n*** SAVING EVOLUTIONARY OUTPUT ***\n")
     qes.data()
     # TODO: add saving of sample images generated with the architecture
+
+    print("\n*** STARTING GAN TRAINING ***\n")
 
     qasm_file_path = os.path.join(evol_output_dir, 'final_best_circuit.qasm')
     metadata_file_path = os.path.join(evol_output_dir, 'metadata.csv')

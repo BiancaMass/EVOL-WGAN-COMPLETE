@@ -11,6 +11,7 @@ from qiskit.circuit.library import UGate, CXGate
 from src.utils.evol_utils.evolutionary_image_utils import crop_images_for_evol
 from src.utils.evol_utils.state_embedding import state_embedding, latent_creation
 
+from src.benchmarking.evol.emd_score_basic_PQC import calculate_benchmark_emd
 from src.evolutionary.nets.generator_methods import from_patches_to_image, from_probs_to_pixels
 from src.utils.emd_cost_function import emd_scoring_function
 from src.utils.evol_utils.evol_plotting import save_tensor
@@ -120,9 +121,13 @@ class Qes:
         self.best_fitness = []  # Best fitness value found over the generations
         self.best_actions = None  # Best actions taken over the generations
 
+        # -------------------------------------------- #
+        # parameters for stopping criteria
         self.no_improvements = 0  # Number of generations without improvements found
         self.fitness_evaluations = 0  # Number of evaluations of the fitness function
         self.current_gen = 0  # Current number of generation in the classical evolutionary algorithm
+        # self.emd_benchmark_score = calculate_benchmark_emd()
+
         self.counting_multi_action = None  # Control over multi actions in the current generations
         self.max_depth = None
 
