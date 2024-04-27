@@ -5,6 +5,7 @@ __pycache__/
 # Custom exclusions
 input/
 output/
+venv/
 venvs/
 **/datasets/
 

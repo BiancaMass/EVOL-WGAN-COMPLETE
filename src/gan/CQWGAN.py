@@ -1,6 +1,7 @@
 import os
 import torch
 import csv
+from scipy.stats import wasserstein_distance_nd
 
 from src.utils.image_utils.save_images import save_real_images, save_generated_images
 from src.utils.gan_utils.gradient_penalty import compute_gp
@@ -117,6 +118,7 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
     gradient_penalty_history = []
     real_validity_history = []
     fake_validity_history = []
+    emd_history = []
 
     file_path = os.path.join(out_folder, "training_values_history.csv")
 
@@ -155,6 +157,11 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
                 d_loss.backward()
                 optimizer_D.step()
 
+                real_images_flat = real_images.reshape(25, -1).detach().numpy()
+                fake_images_flat = fake_images.reshape(25, -1).detach().numpy()
+
+                emd = wasserstein_distance_nd(real_images_flat, fake_images_flat)
+
                 epoch_history.append(epoch)
                 batch_number_history.append(i)
                 real_validity_history.append(mean_real_validity.item())
@@ -166,6 +173,7 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
 
                 estimated_distance = torch.mean(real_validity) - torch.mean(fake_validity)
                 estimated_distance_history.append(estimated_distance.item())
+                emd_history.append(emd)
 
                 optimizer_G.zero_grad()  # Initialize the generator's optimizer (pytorch zero_grad).
 

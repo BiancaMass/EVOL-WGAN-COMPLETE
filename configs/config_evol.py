@@ -3,7 +3,7 @@
 #     EVOLUTIONARY PARAMETERS
 # --------------------------------
 N_CHILDREN = 5
-M_MAX_EVALUATIONS = 30
+M_MAX_EVALUATIONS = 50
 # SHOTS = 2000  # maybe 10000-20000 better for 11 qubits
 DTHETA = 0.1
 PATCH_FOR_EVALUATION = 'random'

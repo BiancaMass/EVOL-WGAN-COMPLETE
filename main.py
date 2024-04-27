@@ -116,11 +116,12 @@ def main():
         'max_depth': max_depth
     }
 
-    print("\n*** STARTING EVOLUTIONARY SEARCH ***\n")
+    print("\n*** INITIALIZING EVOLUTIONARY ALGORITHM ***\n")
     qes = qes_g.Qes(**qes_args)
     # Save the output
-    print("\n*** SAVING EVOLUTIONARY OUTPUT ***\n")
+    print("\n*** STARTING EVOLUTIONARY SEARCH ***\n")
     qes.data()
+    print("\n*** EVOLUTIONARY OUTPUT SAVED ***\n")
     # TODO: add saving of sample images generated with the architecture
 
     print("\n*** STARTING GAN TRAINING ***\n")
