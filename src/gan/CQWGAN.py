@@ -203,7 +203,7 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
 
                     # Save generated images and model states less often than you train the
                     # generator (else it's a bit of an overkill of saving)
-                    if i % (n_critic*8) == 0 and batches_done % sample_interval == 0:
+                    if i % (n_critic*4) == 0 and batches_done % sample_interval == 0:
                         # Save values history
                         data = {
                             'epoch_n': epoch_history,
@@ -213,7 +213,8 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
                             'd_loss': d_loss_history,
                             'gradient_penalty': gradient_penalty_history,
                             'g_loss': g_loss_history,
-                            'estimated_distance': estimated_distance_history
+                            'estimated_distance': estimated_distance_history,
+                            'real_emd_value': emd_history
                         }
 
                         save_history(data=data, file_path=file_path)

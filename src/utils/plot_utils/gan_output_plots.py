@@ -26,7 +26,7 @@ def plot_gan_outputs(input_csv_file, output_dir):
         'gradient_penalty': 'Gradient Penalty',
         'g_loss': 'Generator Loss',
         'estimated_distance': 'Estimated Wasserstein Distance',
-        'emd_history': 'Calculated Wasserstein Distance'
+        'real_emd_value': 'Calculated Wasserstein Distance'
     }
 
     # For the y axis labels
@@ -37,7 +37,7 @@ def plot_gan_outputs(input_csv_file, output_dir):
         'gradient_penalty': 'gradient penalty',
         'g_loss': 'loss',
         'estimated_distance': 'estimated distance',
-        'emd_history': 'EMD'
+        'real_emd_value': 'EMD'
     }
 
     for column in df.columns:
