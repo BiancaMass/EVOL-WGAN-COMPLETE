@@ -4,6 +4,7 @@ from src.utils.image_utils.data_loader_MNIST import dataloader_mnist
 from src.evolutionary import QES_Gen as qes_g
 from src.gan import CQWGAN as gan
 
+from src.utils.plot_utils.gan_output_plots import plot_gan_outputs
 import configs.general_configs as general_configs
 import configs.config_evol as es_configs
 import configs.config_gan as gan_config
@@ -127,17 +128,22 @@ def main():
     qasm_file_path = os.path.join(evol_output_dir, 'final_best_circuit.qasm')
     metadata_file_path = os.path.join(evol_output_dir, 'metadata.csv')
 
-    gan.train_imported_gan(train_dataloader=train_gan_loader,
-                           classes=classes,
-                           out_folder=gan_output_dir,
-                           qasm_file_path=qasm_file_path,
-                           metadata_file_path=metadata_file_path,
-                           normal_latent=randn_latent,
-                           image_side=image_side,
-                           n_channels=n_channels,
-                           n_layers=gan_n_layers,
-                           batch_size=gan_batch_size,
-                           n_epochs=gan_n_epochs)
+    try:
+        gan.train_imported_gan(train_dataloader=train_gan_loader,
+                               classes=classes,
+                               out_folder=gan_output_dir,
+                               qasm_file_path=qasm_file_path,
+                               metadata_file_path=metadata_file_path,
+                               normal_latent=randn_latent,
+                               image_side=image_side,
+                               n_channels=n_channels,
+                               n_layers=gan_n_layers,
+                               batch_size=gan_batch_size,
+                               n_epochs=gan_n_epochs)
+
+    finally:
+        plot_gan_outputs(input_csv_file=os.path.join(gan_output_dir, "training_values_history.csv"),
+                         output_dir=gan_output_dir)
 
 
 if __name__ == '__main__':

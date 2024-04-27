@@ -11,7 +11,7 @@ from qiskit.circuit.library import UGate, CXGate
 from src.utils.evol_utils.evolutionary_image_utils import crop_images_for_evol
 from src.utils.evol_utils.state_embedding import state_embedding, latent_creation
 
-from src.benchmarking.evol.emd_score_basic_PQC import calculate_benchmark_emd
+# from src.benchmarking.evol.emd_score_basic_PQC import calculate_benchmark_emd
 from src.evolutionary.nets.generator_methods import from_patches_to_image, from_probs_to_pixels
 from src.utils.emd_cost_function import emd_scoring_function
 from src.utils.evol_utils.evol_plotting import save_tensor

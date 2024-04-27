@@ -107,5 +107,5 @@ def calculate_benchmark_emd():
     return emd_real_gen
 
 
-emd = calculate_benchmark_emd()
-print(emd)
+# emd = calculate_benchmark_emd()
+# print(emd)
