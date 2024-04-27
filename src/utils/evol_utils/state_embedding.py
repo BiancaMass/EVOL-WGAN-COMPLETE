@@ -18,7 +18,7 @@ def state_embedding(circuit, n_tot_qubits, latent_vector):
     for i in range(n_tot_qubits):
         embedding_layer.ry(latent_vector[i], i)
 
-    complete_circuit = embedding_layer.compose(circuit, front=True)
+    complete_circuit = embedding_layer.compose(circuit, front=False)
 
     return complete_circuit
 
