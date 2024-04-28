@@ -2,16 +2,16 @@
 # --------------------------------
 #     EVOLUTIONARY PARAMETERS
 # --------------------------------
-N_CHILDREN = 5
-M_MAX_EVALUATIONS = 50
+N_CHILDREN = 8
+M_MAX_EVALUATIONS = 240
 # SHOTS = 2000  # maybe 10000-20000 better for 11 qubits
 DTHETA = 0.1
 PATCH_FOR_EVALUATION = 'random'
-ACTION_WEIGHTS = [60, 10, 10, 20]  # ADD; DELETE; SWAP; MUTATE
+ACTION_WEIGHTS = [70, 5, 10, 15]  # ADD; DELETE; SWAP; MUTATE
 MULTI_ACTION_PB = 0.1
-MAX_GEN_UNTIL_CHANGE = 8
+MAX_GEN_UNTIL_CHANGE = 6
 MAX_GEN_NO_IMPROVEMENT = 20
-MAX_DEPTH = 10
+MAX_DEPTH = 6
 
 GENERATION_SAVING_FREQUENCY = 20
 
@@ -21,7 +21,7 @@ GENERATION_SAVING_FREQUENCY = 20
 EVOL_N_BATCHES = 8
 EVOL_BATCH_SIZE = 25  # keep high cause distance is calculated on only 1 batch
 # How many of the total batches to use to compare the generated patches to the real patches
-BATCH_SUBSET = 3 # this means the images used to calculate EMD will be BATCH_SUBSET*EVOL_BATCH_SIZE
+BATCH_SUBSET = 3  # this means the images used to calculate EMD will be BATCH_SUBSET*EVOL_BATCH_SIZE
 
 # TODO these should go in the configs for GAN
 # LR_G = 0.01  # learning rate for the generator
