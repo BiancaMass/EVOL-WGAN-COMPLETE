@@ -67,7 +67,7 @@ class Qes:
         self.n_ancilla = n_ancilla
         self.n_tot_qubits = n_data_qubits + n_ancilla
         self.n_patches = n_patches
-        self.patch_width, self.patch_height = patch_shape[0], patch_shape[1]
+        self.patch_height, self.patch_width = patch_shape[0], patch_shape[1]
         self.pixels_per_patch = pixels_per_patch
         # ----- Input Data Parameters ----- #
         self.dataloader = dataloader
