@@ -1,24 +1,23 @@
 from collections import OrderedDict
 
-"This works but it is way too expensive, it wont do it. And it needs at least 2048 images per " \
-"batch to correctly compute the covariance matrices."
+"This works but it is way too expensive, okay for the last computation but not to insert in the pipeline."
+# TODO: check if there is a minimum required number of images for accurate computation.
 
 from collections import OrderedDict
 import torch
 from torch import nn
-from torch.optim import SGD
 from ignite.engine import Engine
 from ignite.metrics import FID
 from ignite.utils import manual_seed
 
 
-def compute_fid(y_true, y_pred):
+def compute_fid(y_true, y_gen):
     """
     Compute the FID score between two tensors of true and predicted values using a simple model.
 
     Args:
     y_true (torch.Tensor): Ground truth images tensor of shape (batch_size, 1, 28, 28).
-    y_pred (torch.Tensor): Generated images tensor of shape (batch_size, 1, 28, 28).
+    y_gen (torch.Tensor): Generated images tensor of shape (batch_size, 1, 28, 28).
 
     Returns:
     float: The computed FID score.
@@ -49,15 +48,15 @@ def compute_fid(y_true, y_pred):
     metric.attach(evaluator, "fid")
 
     # Run evaluation
-    state = evaluator.run([[y_pred, y_true]])
+    state = evaluator.run([[y_gen, y_true]])
 
     return state.metrics["fid"]
 
 
-# Example usage within another script after importing
-if __name__ == "__main__":
-    manual_seed(666)
-    y_true = torch.zeros(25, 1, 28, 28)  # Placeholder for real images
-    y_pred = torch.ones(25, 1, 28, 28)  # Placeholder for generated images
-    fid_score = compute_fid(y_true, y_pred)
-    print("FID Score:", fid_score)
+# # Example usage within another script after importing
+# if __name__ == "__main__":
+#     manual_seed(666)
+#     y_true = torch.zeros(25, 1, 28, 28)  # Placeholder for real images
+#     y_pred = torch.ones(25, 1, 28, 28)  # Placeholder for generated images
+#     fid_score = compute_fid(y_true, y_pred)
+#     print("FID Score:", fid_score)
