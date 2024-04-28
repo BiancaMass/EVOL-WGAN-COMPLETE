@@ -49,8 +49,8 @@ class QuantumGeneratorImported(nn.Module):
                 layer_params = []
                 for param in initial_params:
                     if isinstance(param, list):  # For gates requiring multiple parameters
-                        for _ in param:
-                            layer_params.append(torch.rand((len(param),), dtype=torch.float32))
+                        # for _ in param:
+                        layer_params.append(torch.rand((len(param),), dtype=torch.float32))
                     else:  # For gates requiring a single parameter
                         layer_params.append(torch.rand((1,), dtype=torch.float32))
 
