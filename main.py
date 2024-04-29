@@ -1,3 +1,4 @@
+import torch
 import os
 
 import configs.general_configs as general_configs
@@ -27,8 +28,7 @@ def main():
         os.makedirs(gan_output_dir)
         print(f"GAN output directory created: {gan_output_dir}")
     # Note: GPU
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = 'cpu'
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using device: {device}')
 
     num_workers = 0 if device == 'cpu' else 8 if device == 'cuda' else 0
@@ -56,7 +56,7 @@ def main():
     patch_for_evaluation = es_configs.PATCH_FOR_EVALUATION
     action_weights = es_configs.ACTION_WEIGHTS
     multi_action_pb = es_configs.MULTI_ACTION_PB
-    max_gen_until_change = es_configs.MAX_GEN_NO_IMPROVEMENT
+    max_gen_until_change = es_configs.MAX_GEN_UNTIL_CHANGE
     max_gen_no_improvement = es_configs.MAX_GEN_NO_IMPROVEMENT
     max_depth = es_configs.MAX_DEPTH
 
