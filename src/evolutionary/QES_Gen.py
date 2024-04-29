@@ -84,7 +84,7 @@ class Qes:
         self.action_weights = action_weights
         self.multi_action_pb = multi_action_pb
         self.patch_for_evaluation = patch_for_evaluation
-        self.max_gen_until_change = max_gen_until_change + 1
+        self.max_gen_until_change = max_gen_until_change # + 1
         self.max_gen_no_improvement = max_gen_no_improvement
         self.n_generations = math.ceil(n_max_evaluations / n_children)
         self.gen_saving_frequency = gen_saving_frequency
