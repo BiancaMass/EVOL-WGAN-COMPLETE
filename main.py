@@ -73,6 +73,48 @@ def main():
     gan_train_size = general_configs.GAN_TRAIN_SIZE
     gan_val_size = general_configs.GAN_VALID_SIZE
 
+    general_metadata_path = os.path.join(general_configs.OUTPUT_DIR, 'metadata.txt')
+
+    # Creating a dictionary of all variables to save
+    metadata_dict = {
+        'Device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
+        'Num Workers': 0 if device == 'cpu' else 8,
+        'Classes': classes,
+        'Data Qubits': n_data_qubits,
+        'Ancillas': n_ancilla,
+        'Image Side': image_side,
+        'Patch Shape': patch_shape,
+        'Pixels per Patch': n_pixels_patch,
+        'Number of Patches': n_patches,
+        'Randn Latent': randn_latent,
+        'Channels': n_channels,
+        'EVOL Batch Size': evol_batch_size,
+        'EVOL Number of Batches': evol_n_batches,
+        'EVOL Batch Subset': evol_batch_subset,
+        'Number of Children': n_children,
+        'Max Evaluations': n_max_evaluations,
+        'DTheta': dtheta,
+        'Patch for Evaluation': patch_for_evaluation,
+        'Action Weights': action_weights,
+        'Multi-action Probability': multi_action_pb,
+        'Max Generation Until Change': max_gen_until_change,
+        'Max Generation No Improvement': max_gen_no_improvement,
+        'Max Depth': max_depth,
+        'Generation Saving Frequency': gen_saving_frequency,
+        'EVOL Training Size': evol_train_size,
+        'EVOL Validation Size': evol_val_size,
+        'GAN Batch Size': gan_batch_size,
+        'GAN Epochs': gan_n_epochs,
+        'GAN Layers': gan_n_layers,
+        'GAN Training Size': gan_train_size,
+        'GAN Validation Size': gan_val_size
+    }
+
+    # Writing metadata to file
+    with open(general_metadata_path, 'w') as f:
+        for key, value in metadata_dict.items():
+            f.write(f'{key}: {value}\n')
+
     print("Creating the data loaders with the following dimensions:")
     print(f'EVOL batch size: {evol_batch_size} \n'
           f'GAN batch size: {gan_batch_size} \n'
