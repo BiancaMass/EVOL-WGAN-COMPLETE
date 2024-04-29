@@ -444,6 +444,7 @@ class Qes:
         self.best_actions = []  # to save in the output file
         action_weights = self.action_weights
         theta_default = self.dtheta
+        multi_action_default = self.multi_action_pb
         for g in range(self.n_generations):
             print(f'\ngeneration:{g} of {self.n_generations}')
             if g == 0:
@@ -486,10 +487,10 @@ class Qes:
                 if self.no_improvements == self.max_gen_until_change:
                     print("Increasing dtheta to exit saddle point")
                     self.dtheta += 0.1
-                    # TODO: increase multi action prob
-                    # Another way would be to increase self.multi_action_pb
+                    self.multi_action_pb += 0.1
                 elif self.no_improvements == 0:  # else reset theta to normal
                     self.dtheta = theta_default
+                    self.multi_action_pb = multi_action_default
                 # Termination criteria
                 if self.no_improvements == self.max_gen_no_improvement:
                     print(f"Reached {self.no_improvements} generations with no improvement. "
@@ -581,7 +582,7 @@ class Qes:
             "DTheta": self.dtheta,
             "Action Weights": self.action_weights,
             "Multi Action Probability": self.multi_action_pb,
-            "Max Generations No Improvement": self.max_gen_until_change,
+            "Max Generations No Improvement": self.max_gen_no_improvement,
             "Max Generations Until Change": self.max_gen_until_change,
             "Generation Saving Frequency": self.gen_saving_frequency,
             "Output Directory": self.output_dir,
