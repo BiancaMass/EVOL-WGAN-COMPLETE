@@ -1,18 +1,19 @@
 import os
 
-from src.utils.image_utils.data_loader_MNIST import dataloader_mnist
-from src.evolutionary import QES_Gen as qes_g
-from src.gan import CQWGAN as gan
-
-from src.utils.plot_utils.gan_output_plots import plot_gan_outputs
-from src.utils.gan_utils.fid_score_calc import fid_score_calculator
-from src.utils.gan_utils.find_latest_saved_generator import find_latest_generator_file
 import configs.general_configs as general_configs
 import configs.config_evol as es_configs
 import configs.config_gan as gan_config
+from src.utils.image_utils.data_loader_MNIST import dataloader_mnist
+from src.evolutionary import QES_Gen as qes_g
+from src.gan import CQWGAN as gan
+from src.utils.plot_utils.gan_output_plots import plot_gan_outputs
+from src.utils.set_seeds import set_seeds
+from src.utils.gan_utils.fid_score_calc import fid_score_calculator
+from src.utils.gan_utils.find_latest_saved_generator import find_latest_generator_file
 
 
 def main():
+    # set_seeds(general_configs.SEED)
     # ------------- Create directories for storing OUTPUT -------------
     evol_output_dir = general_configs.EVOLUTIONARY_OUTPUT_DIR
     gan_output_dir = general_configs.GAN_OUTPUT_DIR
@@ -149,14 +150,14 @@ def main():
                          output_dir=gan_output_dir)
 
         # Calculate and save FID score for last generator
-        gen_file_path = find_latest_generator_file(gan_output_dir)
-        fid_score = fid_score_calculator(validation_dataloader=val_gan_loader,
-                                         n_images_to_evaluate=250,
-                                         path_to_last_generator=gen_file_path,
-                                         qasm_file_path=qasm_file_path)
-        fid_score_file = os.path.join(gan_output_dir, 'fid_score.csv')
-        with open(fid_score_file, 'a') as file:
-            file.write(f"{fid_score},{gen_file_path}\n")
+        # gen_file_path = find_latest_generator_file(gan_output_dir)
+        # fid_score = fid_score_calculator(validation_dataloader=val_gan_loader,
+        #                                  n_images_to_evaluate=250,
+        #                                  path_to_last_generator=gen_file_path,
+        #                                  qasm_file_path=qasm_file_path)
+        # fid_score_file = os.path.join(gan_output_dir, 'fid_score.csv')
+        # with open(fid_score_file, 'a') as file:
+        #     file.write(f"{fid_score},{gen_file_path}\n")
 
 
 if __name__ == '__main__':
