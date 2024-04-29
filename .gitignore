@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 
 # Custom exclusions
+deleteme/
 input/
 output/
 venv/
