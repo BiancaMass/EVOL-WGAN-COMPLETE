@@ -2,5 +2,5 @@
 #### Training parameters ####
 RANDN = False
 GAN_BATCH_SIZE = 25
-N_EPOCHS = 2
-N_LAYERS = 2
+N_EPOCHS = 12
+N_LAYERS = 1
