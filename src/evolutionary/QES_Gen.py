@@ -16,7 +16,8 @@ from src.evolutionary.nets.generator_methods import from_patches_to_image, from_
 from src.utils.emd_cost_function import emd_scoring_function
 from src.utils.evol_utils.evol_plotting import save_tensor
 from src.utils.plot_utils.emd_plot_evol import plot_best_fitness
-
+from src.utils.set_seeds import set_seeds
+from configs import general_configs
 
 class Qes:
     """
@@ -61,6 +62,7 @@ class Qes:
         :keyword max_depth: integer. It fixes an upper bound on the quantum circuits depth (the
               length of the critical path (longest sequence of gates)).
         """
+        # set_seeds(general_configs.SEED)
         print("Initializing Qes instance")
         # ----- Ansatz Parameters ----- #
         self.n_data_qubits = n_data_qubits

@@ -9,6 +9,8 @@ from src.gan.nets.generator import QuantumGeneratorImported
 from src.gan.nets.discriminator import Discriminator
 
 from src.utils.gan_utils.save_value_history import save_history
+from src.utils.set_seeds import set_seeds
+from configs import general_configs
 
 
 def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_file_path: str,
@@ -34,6 +36,8 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
 
     :return: None.
     """
+    # set_seeds(general_configs.SEED)
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Using device:', device)
 

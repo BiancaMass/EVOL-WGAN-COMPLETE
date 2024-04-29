@@ -12,10 +12,7 @@ GAN_OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'gan')
 INPUT_DIR = os.path.join(f'./input')
 DATASET_DIR = os.path.join(INPUT_DIR, 'datasets')
 
-# TODO: adjust from gan
-#
-# QASM_FILE_PATH= INPUT_FOLDER + "final_best_circuit.qasm"
-# METADATA_FILE_PATH = INPUT_FOLDER + "metadata.csv"
+SEED = 97
 
 # --------------------------------
 #      INPUT DATA PARAMETERS
