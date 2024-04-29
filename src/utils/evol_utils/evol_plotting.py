@@ -51,7 +51,7 @@ def plot_tensor(tensor):
         raise ValueError("Input must be a PyTorch tensor.")
 
     # Convert the tensor to a NumPy array for plotting
-    image = tensor.numpy()
+    image = tensor.cpu().numpy()
 
     # Create a figure and plot the image
     plt.figure(figsize=(5, 5))  # Adjust the figure size as needed
@@ -71,7 +71,7 @@ def save_tensor(tensor, filename):
         raise ValueError("Input must be a PyTorch tensor.")
 
     # Convert the tensor to a NumPy array for plotting
-    image = tensor.numpy()
+    # image = tensor.cpu().numpy()
 
     # Create a figure and plot the image
     plt.figure()

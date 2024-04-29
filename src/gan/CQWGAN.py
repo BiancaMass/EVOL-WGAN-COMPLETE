@@ -157,8 +157,11 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
                 d_loss.backward()
                 optimizer_D.step()
 
-                real_images_flat = real_images.reshape(25, -1).detach().numpy()
-                fake_images_flat = fake_images.reshape(25, -1).detach().numpy()
+                real_images_flat = real_images.reshape(25, -1).cpu()
+                fake_images_flat = fake_images.reshape(25, -1).cpu()
+
+                real_images_flat = real_images_flat.detach().numpy()
+                fake_images_flat = fake_images_flat.detach().numpy()
 
                 emd = wasserstein_distance_nd(real_images_flat, fake_images_flat)
 

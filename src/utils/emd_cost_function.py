@@ -57,11 +57,11 @@ def emd_scoring_function(real_images_preloaded, num_images_to_compare, qc,
     real_images_tensor = torch.stack(real_images_preloaded, dim=0)
     generated_images_tensor = torch.stack([torch.from_numpy(image).float() for image in generated_images_list])
 
-    real_images_flat = real_images_tensor.reshape(num_images_to_compare, -1)
-    generated_images_flat = generated_images_tensor.reshape(num_images_to_compare, -1)
+    real_images_flat = real_images_tensor.reshape(num_images_to_compare, -1).cpu()
+    generated_images_flat = generated_images_tensor.reshape(num_images_to_compare, -1).cpu()
 
-    # real_images_flat_np = real_images_flat.cpu().detach().numpy()
-    # generated_images_flat_np = generated_images_flat.cpu().detach().numpy()
+    # real_images_flat_np = real_images_flat.detach().numpy()
+    # generated_images_flat_np = generated_images_flat.detach().numpy()
 
     # wasserstein_distance_nd expects tensors or vectors shaped so that each row is a vector
     # observation or possible value (so in this case a flattened image or patch), and each
