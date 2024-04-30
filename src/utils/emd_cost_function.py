@@ -41,6 +41,8 @@ def emd_scoring_function(real_images_preloaded, num_images_to_compare, qc,
             generated_image = generated_image.reshape(1, patch_height, patch_width)
             generated_images_list.append(generated_image)
 
+        generated_images_tensor = torch.stack([torch.from_numpy(image).float() for image in generated_images_list])
+
     else:
         for batch_index in range(num_images_to_compare):
             qc_with_embedding = state_embedding(qc, n_tot_qubits, latent_creation(n_tot_qubits))
@@ -54,8 +56,10 @@ def emd_scoring_function(real_images_preloaded, num_images_to_compare, qc,
                                                     sim=sim)
             generated_images_list.append(generated_image)
 
+        generated_images_tensor = torch.stack(generated_images_list, dim=0)
+
     real_images_tensor = torch.stack(real_images_preloaded, dim=0)
-    generated_images_tensor = torch.stack([torch.from_numpy(image).float() for image in generated_images_list])
+
 
     real_images_flat = real_images_tensor.reshape(num_images_to_compare, -1).cpu()
     generated_images_flat = generated_images_tensor.reshape(num_images_to_compare, -1).cpu()
