@@ -9,6 +9,8 @@ output/
 venv/
 venvs/
 **/datasets/
+**/fake/
+**/real/
 
 # Pycahrm IDE folder (Jetbrains)
 .idea/
