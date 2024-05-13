@@ -490,9 +490,11 @@ class Qes:
                     print("Increasing dtheta to exit saddle point")
                     self.dtheta += 0.1
                     self.multi_action_pb += 0.1
+                    # self.action_weights = .. # increase
                 elif self.no_improvements == 0:  # else reset theta to normal
                     self.dtheta = theta_default
                     self.multi_action_pb = multi_action_default
+                    # self.action_weights = action_weights
                 # Termination criteria
                 if self.no_improvements == self.max_gen_no_improvement:
                     print(f"Reached {self.no_improvements} generations with no improvement. "

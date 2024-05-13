@@ -151,11 +151,11 @@ def train_imported_gan(train_dataloader, classes: list, out_folder: str, qasm_fi
                 fake_validity = discriminator(fake_images)
                 # Compute gradient penalty
                 gradient_penalty = compute_gp(discriminator, real_images, fake_images)
-                # Compute Adversarial loss - D wants to minimize it
 
                 mean_real_validity = torch.mean(real_validity)
                 mean_fake_validity = torch.mean(fake_validity)
 
+                # Compute Adversarial loss - D wants to minimize it
                 d_loss = -mean_real_validity + mean_fake_validity + (lambda_gp * gradient_penalty)
                 # Backpropagate and update the critic's weights.
                 d_loss.backward()
