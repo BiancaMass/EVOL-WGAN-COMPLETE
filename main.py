@@ -1,5 +1,7 @@
 import torch
 import os
+import numpy as np
+import random
 
 import configs.general_configs as general_configs
 import configs.config_evol as es_configs
@@ -14,7 +16,12 @@ from src.utils.gan_utils.find_latest_saved_generator import find_latest_generato
 
 
 def main():
-    # set_seeds(general_configs.SEED)
+    # Generate a random seed
+    # seed = np.random.randint(low=0, high=10000)
+    # random.seed(seed)
+    #
+    # print(f"Seed used for this run: {seed}")
+
     # ------------- Create directories for storing OUTPUT -------------
     evol_output_dir = general_configs.EVOLUTIONARY_OUTPUT_DIR
     gan_output_dir = general_configs.GAN_OUTPUT_DIR
@@ -108,6 +115,7 @@ def main():
         'GAN Layers': gan_n_layers,
         'GAN Training Size': gan_train_size,
         'GAN Validation Size': gan_val_size
+        # 'seed': seed
     }
 
     # Writing metadata to file

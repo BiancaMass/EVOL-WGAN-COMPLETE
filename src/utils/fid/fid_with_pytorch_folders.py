@@ -26,7 +26,8 @@ randn_true = gan_config.RANDN
 # STUFF TO CHANGE
 patch_shape = (1, 28)
 N_ANCILLAS = 1
-current_folder = "24_05_11_07_52_57"
+current_folder = "24_05_15_08_55_10"
+source_folder = "/Volumes/SANDISK32_2/final_round3"
 # END STUFF TO CHANGE
 
 n_sub_generators = int(image_side / (int(patch_shape[0])))
@@ -35,7 +36,6 @@ n_layers = 1
 n_tot_qubits = N_DATA_QUBITS + N_ANCILLAS
 
 
-source_folder = "/Volumes/SANDISK32_2/final_round3"
 folder = os.path.join(source_folder, current_folder)
 
 # subfolders = [ f.path for f in os.scandir(source_folder) if f.is_dir() ]
@@ -79,7 +79,7 @@ for index, img in enumerate(fake_images):
 print("Clearing cache")
 del generator
 gc.collect()
-print("*** DONE *** \n Going to next folder")
+print("*** DONE ***")
 
 # Then, on the terminal call (second pooling layer)
 # python -m pytorch_fid path/to/dataset1 path/to/dataset2 --dims 192
