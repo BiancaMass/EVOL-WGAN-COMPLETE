@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
 "This works but it is way too expensive, okay for the last computation but not to insert in the pipeline."
-# TODO: check if there is a minimum required number of images for accurate computation.
 
 from collections import OrderedDict
 import torch
