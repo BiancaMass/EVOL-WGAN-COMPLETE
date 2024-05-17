@@ -19,13 +19,14 @@ from src.utils.plot_utils.emd_plot_evol import plot_best_fitness
 from src.utils.set_seeds import set_seeds
 from configs import general_configs
 
+
 class Qes:
     """
     Evolutionary search for quantum ansatz
     """
 
     def __init__(self, n_data_qubits, n_ancilla, patch_shape, pixels_per_patch, n_patches,
-                 dataloader, evol_batch_size, n_batches, batch_subset, classes,
+                 dataloader_train, dataloader_valid, evol_batch_size, n_batches, batch_subset, classes,
                  n_children, n_max_evaluations, dtheta, action_weights, multi_action_pb,
                  patch_for_evaluation, device,
                  max_gen_until_change, max_gen_no_improvement, gen_saving_frequency,
@@ -63,6 +64,7 @@ class Qes:
               length of the critical path (longest sequence of gates)).
         """
         # set_seeds(general_configs.SEED)
+        self.validation_fitness = None
         print("Initializing Qes instance")
         # ----- Ansatz Parameters ----- #
         self.n_data_qubits = n_data_qubits
@@ -72,7 +74,8 @@ class Qes:
         self.patch_height, self.patch_width = patch_shape[0], patch_shape[1]
         self.pixels_per_patch = pixels_per_patch
         # ----- Input Data Parameters ----- #
-        self.dataloader = dataloader
+        self.dataloader_train = dataloader_train
+        self.dataloader_valid = dataloader_valid
         self.n_batches = n_batches
         self.evol_batch_size = evol_batch_size
         self.number_images_to_compare = batch_subset * evol_batch_size
@@ -84,15 +87,12 @@ class Qes:
         self.action_weights = action_weights
         self.multi_action_pb = multi_action_pb
         self.patch_for_evaluation = patch_for_evaluation
-        self.max_gen_until_change = max_gen_until_change # + 1
+        self.max_gen_until_change = max_gen_until_change  # + 1
         self.max_gen_no_improvement = max_gen_no_improvement
         self.n_generations = math.ceil(n_max_evaluations / n_children)
         self.gen_saving_frequency = gen_saving_frequency
         self.sim = Aer.get_backend('statevector_simulator')
 
-        # TODO: for training GPU find a simulator that is GPU compatible
-        # if torch.cuda.is_available():
-        #     self.sim.set_options(device='GPU')
         self.device = device
 
         self.output_dir = output_dir
@@ -139,7 +139,7 @@ class Qes:
         self.output = None  # All the algorithm data we need to store
 
         # Preload images from the real dataset to use to calculate the EMD (earth mover distance)
-        self.cropped_real_images = crop_images_for_evol(dataloader=self.dataloader,
+        self.cropped_real_images = crop_images_for_evol(dataloader=self.dataloader_train,
                                                         patch_position=self.patch_for_evaluation,
                                                         patch_height=self.patch_height,
                                                         n_batches=self.n_batches,
@@ -190,11 +190,11 @@ class Qes:
                     self.counting_multi_action = 0  # to avoid additional actions to be applied
                 else:
                     # add 1 extra action with prob. multiaction_prob (so usually 1 action, 2
-                    # actions with prob 10% or whatever muliaction_prob is)
+                    # actions with prob 10% or whatever multiaction_prob is)
                     counter = 1 + self.multiaction().counting_multi_action
             else:
                 # add 1 extra action with prob. multiaction_prob (so usually 1 action, 2
-                # actions with prob 10% or whatever muliaction_prob is)
+                # actions with prob 10% or whatever multiaction_prob is)
                 counter = 1 + self.multiaction().counting_multi_action
 
             self.act_choice = random.choices(['A', 'D', 'S', 'M'], weights=self.action_weights,
@@ -202,7 +202,7 @@ class Qes:
             angle1 = random.random() * 2 * math.pi
             angle2 = random.random() * 2 * math.pi
             angle3 = random.random() * 2 * math.pi
-            # TODO: include a choose gate argument to choose which system to use
+            # TODO: future implementations: include a choose gate argument to choose which system to use
             # gate_list = [qc.rx, qc.ry, qc.rz, qc.rxx, qc.ryy, qc.rzz]
             # gate_dict = {'rx': RXGate, 'ry': RYGate, 'rz': RZGate,
             #              'rxx': RXXGate, 'ryy': RYYGate, 'rzz': RZZGate}
@@ -230,27 +230,13 @@ class Qes:
                         qc.data.remove(qc.data[position])
                     else:
                         pass
-                    # TODO delete
-                    # Exclude the the first n_tot_qubits gates (encoding gates) - NOT ANYMORE
-                    # if self.n_tot_qubits < len(qc.data) - 1:
-                    #     position = random.randint(self.n_tot_qubits, len(qc.data) - 1)
-                    #     qc.data.remove(qc.data[position])
 
                 elif self.act_choice[j] == 'S':
                     # Picks a gate and substitutes it with a gate from the family chosen at random
 
-                    # Control if there are enough gates in the circuit to perform a SWAP
-                    # TODO check
                     if len(qc.data) > 2:
                         position = random.randint(0, len(qc.data) - 2)
                         remove_ok = True
-
-                    # TODO: delete
-                    # Control if there are enough gates in the circuit to perform a SWAP
-                    # if len(qc.data) - 1 - self.n_tot_qubits > 0:
-                    # Pick a position for the gate to remove and replace
-                    # Exclude the the first n_tot_qubits gates (encoding gates)
-                    # position = random.randint(self.n_tot_qubits, len(qc.data) - 2)
 
                     else:  # Handle the case where there are not enough gates to perform a SWAP
                         remove_ok = False
@@ -306,10 +292,6 @@ class Qes:
                     to_select = 'u'
                     gates_to_mutate = [i for i, gate in enumerate(qc.data[:], start=0)
                                        if gate[0].name == to_select]
-                    # TODO: delete
-                    # gates_to_mutate = [i for i, gate in enumerate(qc.data[self.n_tot_qubits:],
-                    #                                               start=self.n_tot_qubits)
-                    #                    if gate[0].name == to_select]
 
                     if gates_to_mutate:
                         position = random.choice(gates_to_mutate)
@@ -512,7 +494,24 @@ class Qes:
             self.current_gen += 1
             print('Number of generations with no improvements: ', self.no_improvements)
             print('best fitness so far: ', self.best_fitness[g])
-        print('QES solution: ', self.best_solution[-1])
+        # print('QES solution: ', self.best_solution[-1])
+        # Preload images from the real dataset to use to calculate the EMD (earth mover distance)
+        cropped_validation_images = crop_images_for_evol(dataloader=self.dataloader_valid,
+                                                         patch_position=self.patch_for_evaluation,
+                                                         patch_height=self.patch_height,
+                                                         n_batches=self.n_batches,
+                                                         device=self.device)
+        self.validation_fitness = (emd_scoring_function(real_images_preloaded=cropped_validation_images,
+                                                        num_images_to_compare=len(cropped_validation_images),
+                                                        qc=self.best_individuals[-1],
+                                                        n_tot_qubits=self.n_tot_qubits,
+                                                        n_ancillas=self.n_ancilla,
+                                                        n_patches=self.n_patches,
+                                                        pixels_per_patch=self.pixels_per_patch,
+                                                        patch_width=self.patch_width,
+                                                        patch_height=self.patch_height,
+                                                        sim=self.sim))
+
         return self
 
     def data(self):
@@ -528,11 +527,11 @@ class Qes:
         self.output = [algo.best_solution, algo.best_individuals[0], algo.best_individuals[-1],
                        algo.depth,
                        algo.best_actions, algo.best_fitness,
-                       algo.best_fitness[-1]]
+                       algo.best_fitness[-1], algo.validation_fitness]
 
         # Define the headings for the CSV file
         headings = ["Best Solution", "Best Individual - Start", "Best Individual - End",
-                    "Depth", "Best Actions", "Best Fitness", "Final Best Fitness"]
+                    "Depth", "Best Actions", "Best Fitness", "Final Best Fitness", "Validation Fitness"]
 
         longest_list = max(self.output, key=lambda x: len(x) if isinstance(x, list) else 1)
         num_rows = len(longest_list) if isinstance(longest_list, list) else 1
@@ -561,8 +560,8 @@ class Qes:
 
         # ------------- SAVE CIRCUIT  -------------
         # Quantum circuit as qasm file
-        # TODO: or you could remove the whole stripping and re-adding layer in the GAN
-        # So basically save without embedding, and remove the part in the GAN wheree you remove
+        # Or you could remove the whole stripping and re-adding layer in the GAN
+        # So basically save without embedding, and remove the part in the GAN where you remove
         # the embedding layer
         qc = algo.best_individuals[-1].copy()
         qc_with_embedding = state_embedding(qc, self.n_tot_qubits,
