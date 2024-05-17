@@ -17,10 +17,10 @@ from src.utils.gan_utils.find_latest_saved_generator import find_latest_generato
 
 def main():
     # Generate a random seed
-    # seed = np.random.randint(low=0, high=10000)
-    # random.seed(seed)
-    #
-    # print(f"Seed used for this run: {seed}")
+    seed = np.random.randint(low=0, high=10000)
+    set_seeds(seed)
+
+    print(f"Seed used for this run: {seed}")
 
     # ------------- Create directories for storing OUTPUT -------------
     evol_output_dir = general_configs.EVOLUTIONARY_OUTPUT_DIR
@@ -114,8 +114,8 @@ def main():
         'GAN Epochs': gan_n_epochs,
         'GAN Layers': gan_n_layers,
         'GAN Training Size': gan_train_size,
-        'GAN Validation Size': gan_val_size
-        # 'seed': seed
+        'GAN Validation Size': gan_val_size,
+        'seed': seed
     }
 
     # Writing metadata to file

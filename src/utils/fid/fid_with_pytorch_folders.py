@@ -26,8 +26,8 @@ randn_true = gan_config.RANDN
 # STUFF TO CHANGE
 patch_shape = (1, 28)
 N_ANCILLAS = 1
-current_folder = "24_05_15_08_55_10"
-source_folder = "/Volumes/SANDISK32_2/final_round3"
+current_folder = "24_05_16_10_06_47"
+source_folder = "/Volumes/SANDISK32_2/final_round4"
 # END STUFF TO CHANGE
 
 n_sub_generators = int(image_side / (int(patch_shape[0])))
