@@ -1,0 +1,270 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# The script manipulates and generates plots for the 5th stage of experiments
+
+```{r}
+# Importing libraries
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(RColorBrewer)
+```
+
+## Import the Datasets
+
+```{r}
+# Set the main variables:
+round <- "final_round5"
+
+
+base_dir <- "/Volumes/SANDISK32_2"
+```
+
+
+```{r}
+# Extract the csv files from the evolutionary directories
+
+data_directory <- file.path(base_dir, round)
+
+csv_files <- list.files(path = data_directory, pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
+csv_files <- csv_files[!grepl("/gan/", csv_files)]
+csv_files <- csv_files[!grepl("metadata", csv_files)]
+print(csv_files)
+```
+
+
+```{r}
+# Folder names and corresponding experiment IDs
+folder_experiment_id <- list(
+  "24_05_18_16_40_18" = "F_01",
+  "24_05_18_17_39_27" = "F_02",
+  "24_05_18_21_35_44" = "F_03",
+  "24_05_18_21_36_23" = "F_04",
+  "24_05_20_09_15_56" = "F_05",
+  "24_05_20_09_22_24" = "F_06",
+  "24_05_21_21_48_38" = "F_07",
+  "24_05_21_21_49_30" = "F_08",
+  "24_05_22_08_54_27" = "F_09",
+  "24_05_22_08_56_14" = "F_10"
+)
+```
+
+
+
+```{r}
+# Function to extract folder name from file path
+extract_folder_name <- function(path) {
+  parts <- strsplit(path, "/")[[1]]
+  return(parts[6])  # Adjust the index based on the actual position of the folder name in your paths
+}
+
+
+# Function to extract folder name from file path
+extract_folder_name <- function(path) {
+  parts <- strsplit(path, "/")[[1]]
+  return(parts[5])  # Adjust the index based on the actual position of the folder name in your paths
+}
+
+# Read files into data frames and exclude specified columns
+data_frames <- lapply(seq_along(csv_files), function(i) {
+  df <- read.csv(csv_files[i]) %>%
+    select(-c(Best.Solution, Best.Individual...Start, Best.Individual...End))
+  folder_name <- extract_folder_name(csv_files[i])
+  experiment_id <- folder_experiment_id[[folder_name]]
+  df <- df %>%
+    mutate(folder = folder_name, experiment_id = experiment_id)
+  assign(paste0("df", i), df, envir = .GlobalEnv)
+})
+```
+
+Add a column for the number of generations
+```{r}
+# Function to add a 'generations' column
+add_generations <- function(df) {
+  df %>%
+    mutate(generations = row_number())
+}
+
+# Apply the function to each data frame and reassign to the global environment
+data_frames <- lapply(seq_along(data_frames), function(i) {
+  df <- data_frames[[i]] %>% add_generations()
+  assign(paste0("df", i), df, envir = .GlobalEnv)
+  return(df)
+})
+
+```
+
+## Average number of generations for each experiment
+Calculate the average number of generations each experiment ran for, equivalent to the number of rows of each csv file (I verified this, it is indeed equivalent).
+```{r}
+# List of data frames
+data_frame_names <- paste0("df", 1:10)
+
+# Function to get the number of rows for each data frame
+num_rows_list <- sapply(data_frame_names, function(df_name) {
+  nrow(get(df_name))
+})
+
+# Calculate the average number of rows
+average_num_rows <- mean(num_rows_list)
+
+# Print the average number of rows
+print(paste("The average number of rows is:", average_num_rows))
+
+```
+
+## EMD plots
+
+### Single plot (try-out)
+
+```{r}
+# Create the plot for df1
+plot_df1 <- ggplot(df1, aes(x = 1:nrow(df1), y = Best.Fitness)) +
+  #geom_line(color = "darkblue", size = 1.2) +
+  geom_smooth(method = "loess", color = "darkblue", se = FALSE, span = 0.02, size = 1.4) +
+  #geom_point(color = "black", size = 0.7, alpha = 0.4) +
+  labs(title = "EMD curve for df1", x = "Generations", y = "Best Fitness") 
+  #theme_minimal()
+
+# Print the plot
+print(plot_df1)
+```
+
+### Grid plot
+Create a grid plot of all the EMD values for the 10 experiments:
+
+```{r}
+
+# Suppress warnings
+options(warn = -1)
+
+# Function to create a plot for each data frame with the experiment ID as the title,
+# smaller axis labels, and tilted x-axis labels
+create_plot <- function(df) {
+  ggplot(df, aes(x = 1:nrow(df), y = Best.Fitness)) +
+    geom_line(color = "darkblue", size = 1.2) +
+    labs(title = unique(df$experiment_id), x = "Generations", y = "EMD Value") +
+    ylim(1.99, 4) +
+    theme(axis.title = element_text(size = 8),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(size = 12, hjust = 0.5))
+}
+
+# List of data frames
+data_frames <- list(df1, df2, df3, df4, df5, df6, df7, df8, df9, df10)
+
+# Create a list of plots
+plots <- lapply(data_frames, create_plot)
+
+# Arrange the plots in a 2x5 grid with a general title
+grid_plot <- grid.arrange(
+  grobs = plots,
+  ncol = 5,
+  nrow = 2,
+  top = textGrob("EMD Curves for All Data Frames", gp = gpar(fontsize = 16))
+
+)
+
+# Print the grid plot
+suppressMessages(print(grid_plot))
+```
+
+### Overlapping plot of all EMDs
+
+```{r}
+tail(df1)
+```
+
+
+## Create a plot that shows all 10 EMDs in the same plot.
+
+Find the maximum number of generations across the 10 experiments:
+```{r}
+max_generations <- max(sapply(data_frames, nrow))
+```
+
+Create a new data frame for each experiment with extended generations:
+```{r}
+extend_generations <- function(df, max_gens) {
+  n <- nrow(df)
+  extended_df <- df %>%
+    right_join(data.frame(generations = 1:max_gens), by = "generations") %>%
+    arrange(generations)
+  return(extended_df)
+}
+
+extended_data_frames <- lapply(data_frames, extend_generations, max_gens = max_generations)
+```
+
+Add the experiment_id to each extended data frame and combine them:
+```{r}
+experiment_labels <- c(
+  "1" = "F_01", "2" = "F_02", "3" = "F_03", "4" = "F_04",
+  "5" = "F_05", "6" = "F_06", "7" = "F_07", "8" = "F_08",
+  "9" = "F_09", "10" = "F_10"
+)
+
+combined_data <- bind_rows(extended_data_frames, .id = "experiment_number") %>%
+  mutate(experiment_label = factor(experiment_number, labels = experiment_labels))
+
+```
+
+Create and print the plot:
+```{r}
+emd_plot <- ggplot(combined_data, aes(x = generations, y = Best.Fitness, color = experiment_label)) +
+  geom_line(size = 1.2) +
+  scale_color_manual(values = scales::hue_pal()(10)) +  # Set pastel colors
+  labs(title = "EMD Values for All Experiments", x = "Generations", y = "Best Fitness", color = "Experiment") +
+  theme(axis.title = element_text(size = 12),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(size = 16, hjust = 0.5))
+
+print(emd_plot)
+```
+
+Choose a color blind friendly palette:
+
+```{r}
+display.brewer.all(n = 10, colorblindFriendly = TRUE)
+```
+
+
+
+
+```{r}
+# Define a more subdued color palette
+palette <- brewer.pal(n = 10, name = "Paired")
+
+emd_plot <- ggplot(combined_data, aes(x = generations, y = Best.Fitness, color = experiment_label)) +
+  geom_line(size = 1.2, alpha = 0.8) +
+  scale_color_manual(values = palette) +  # Use subdued color palette
+  labs(title = "EMD Values for Stage 5 Experiments", x = "Generations", y = "EMD value", color = "Experiment ID") +
+  theme(
+    axis.title = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 16, hjust = 0.5)
+  )
+
+suppressMessages(print(emd_plot))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

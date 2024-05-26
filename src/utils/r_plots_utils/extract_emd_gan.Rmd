@@ -1,0 +1,38 @@
+---
+title: "calculate_emd"
+author: "Bianca Massacci"
+date: "5/8/2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+base_dir <- "/Volumes/SANDISK32_2/final_round5"
+#base_dir <- "/Volumes/SANDISK32_2/final_experiments"
+folder_name <- "24_05_21_21_49_30"
+gan_name <- "gan"
+csv_filename <- "training_values_history.csv"
+csv_path <- file.path(base_dir, folder_name, gan_name, csv_filename)
+
+print(csv_path)
+gan_data <- read.csv(csv_path)
+
+#tail(gan_data)
+
+```
+
+Calculate average emd for the last epoch (12th)
+
+```{r}
+data_filtered <- gan_data[gan_data$epoch_n == 11, ]
+data_filtered <- data_filtered[data_filtered$batch_n > 29, ]
+data_filtered <- data_filtered[data_filtered$batch_n < 61, ]
+average_emd <- mean(data_filtered$real_emd_value, na.rm = TRUE)
+print("Average of real_emd_value in last 30 batches:" )
+print(average_emd)
+```
+
