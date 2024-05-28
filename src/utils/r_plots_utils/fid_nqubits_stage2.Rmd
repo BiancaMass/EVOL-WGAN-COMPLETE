@@ -1,0 +1,179 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+
+```{r}
+# Create the data frame
+data_2 <- data.frame(
+  n_data_qubits = c(5, 5, 5, 6, 6, 6, 5, 5, 5, 6, 6, 6, 5, 5, 5, 6, 6, 6),
+  n_patches = c(28, 28, 28, 14, 14, 14, 28, 28, 28, 14, 14, 14, 28, 28, 28, 14, 14, 14),
+  n_ancilla = c(1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3),
+  fid = c(5.499, 5.613, 8.496, 5.151, 12.338, 4.595, 10.441, 12.480, 3.103, 10.142, 4.010, 6.371, 3.657, 20.468, 17.126, 17.631, 6.216, 17.616)
+)
+
+data_2 <- data_2 %>%
+  mutate(tot_qubits = n_data_qubits + n_ancilla)
+```
+
+```{r}
+data_2
+```
+
+## Analysis with total qubits (ancilla + data)
+
+```{r}
+# Calculate mean and standard deviation for each total qubits group
+summary_agg_data <- data_2 %>%
+  group_by(tot_qubits) %>%
+  summarise(mean_fid = mean(fid), sd_fid = sd(fid))
+
+# Create the plot with error bars
+agg_plot <- ggplot(summary_agg_data, aes(x = factor(tot_qubits), y = mean_fid)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  geom_errorbar(aes(ymin = mean_fid - sd_fid, ymax = mean_fid + sd_fid), width = 0.2) +
+  labs(title = "Average FID by Total Qubits",
+       x = "Total Qubits",
+       y = "Average FID") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+    plot.margin = unit(c(1, 1, 1, 1), "cm")
+  )
+
+# Display the plot
+print(agg_plot)
+```
+
+```{r}
+# Create the scatter plot
+scatter_plot <- ggplot(data_2, aes(x = factor(tot_qubits), y = fid, color = factor(n_ancilla), shape = factor(n_data_qubits))) +
+  #geom_point() +
+  geom_jitter(width = 0.2, height = 0.2, size = 4, alpha = 0.8) +
+  labs(title = "FID by Total Qubits",
+       x = "Total Qubits",
+       y = "FID",
+       color = "Number of Ancillas",
+       shape = "Number of Data Qubits") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+# Display the plot
+print(scatter_plot)
+```
+
+
+```{r}
+# Create the scatter plot
+scatter_plot <- ggplot(data_2, aes(x = factor(tot_qubits), y = fid)) +
+  #geom_point(size = 4, alpha = 0.8) +
+  geom_jitter(width = 0.1, height = 0.0, size = 4, alpha = 0.9) +
+  labs(title = "FID by Total Qubits",
+       subtitle = "Experiment Stage 2",
+       x = "Total Qubits",
+       y = "FID") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+# Display the plot
+print(scatter_plot)
+```
+
+
+
+
+## Analysis with distinction of ancilla and data qubits
+```{r}
+# Calculate average FID grouped by n_data_qubits and n_ancilla
+summary_data <- data_2 %>%
+  group_by(n_data_qubits, n_ancilla) %>%
+  summarise(mean_fid = mean(fid),
+            sd_fid = sd(fid))
+
+summary_data
+```
+
+
+
+```{r}
+# Create the heatmap
+heatmap_plot <- ggplot(summary_data, aes(x = factor(n_data_qubits), y = factor(n_ancilla), fill = mean_fid)) +
+  geom_tile() +
+  scale_fill_gradient(low = "darkolivegreen2", high = "orangered3") +
+  labs(title = "Average FID by Number of Data Qubits and Number of Ancillas",
+       subtitle = "Experiment Stage 2", 
+       x = "Number of Data Qubits",
+       y = "Number of Ancillas",
+       fill = "Average FID") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 17),
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12),
+    legend.key.size = unit(0.5, "cm")
+  )
+
+
+# Display the heatmap
+print(heatmap_plot)
+```
+
+
+```{r}
+# Create the heatmap with annotations for standard deviation
+heatmap_plot <- ggplot(summary_data, aes(x = factor(n_data_qubits), y = factor(n_ancilla), fill = mean_fid)) +
+  geom_tile() +
+  geom_text(aes(label = round(sd_fid, 2)), color = "black", size = 5) +
+  scale_fill_gradient(low = "lightblue", high = "red") +
+  labs(title = "Average FID by Number of Data Qubits and Number of Ancillas",
+       subtitle = "Standard deviation annotated in each grid element", 
+       x = "Number of Data Qubits",
+       y = "Number of Ancillas",
+       fill = "Average FID") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(0.5, "cm"),
+    plot.margin = unit(c(1, 1, 1, 1), "cm")
+  )
+
+# Display the plot
+print(heatmap_plot)
+```
+
