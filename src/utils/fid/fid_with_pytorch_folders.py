@@ -14,7 +14,6 @@ Stores them in a folder, so that they are ready to be used with pytorch_fid
 for FID calculation
 """
 
-
 device = 'cpu'
 num_workers = 0 if device == 'cpu' else 8 if device == 'cuda' else 0
 print(f"Number of workers selected: {num_workers}")
@@ -26,8 +25,10 @@ randn_true = gan_config.RANDN
 # STUFF TO CHANGE
 patch_shape = (1, 28)
 N_ANCILLAS = 1
-current_folder = "24_05_16_10_06_47"
-source_folder = "/Volumes/SANDISK32_2/final_round4"
+current_folder = "24_05_18_16_40_18"
+
+source_folder = "/Volumes/SANDISK32_2/final_round5"
+last_generator = "generator-3180.pt"
 # END STUFF TO CHANGE
 
 n_sub_generators = int(image_side / (int(patch_shape[0])))
@@ -38,9 +39,6 @@ n_tot_qubits = N_DATA_QUBITS + N_ANCILLAS
 
 folder = os.path.join(source_folder, current_folder)
 
-# subfolders = [ f.path for f in os.scandir(source_folder) if f.is_dir() ]
-
-# for folder in subfolders:
 print(f'Going over folder {folder}')
 
 output_folder = os.path.join(folder, "fid_images")
@@ -50,7 +48,7 @@ if not os.path.exists(fake_folder):
     os.makedirs(fake_folder)
 
 path_to_qasm_file = os.path.join(folder, "evol", "final_best_circuit.qasm")
-path_to_last_generator = os.path.join(folder, "gan", "generator-940.pt")
+path_to_last_generator = os.path.join(folder, "gan", last_generator)
 
 n_images_to_compare = 200
 

@@ -3,20 +3,22 @@ import shutil
 from random import sample
 
 
-def create_sample_sets(input_dir, output_dir, sample_sizes, prefix):
+def create_sample_sets(input_directory, output_directory, sample_sizes, prefix):
     # Ensure the output directory exists
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_directory, exist_ok=True)
 
     # Get all image filenames in the input directory
-    all_images = os.listdir(input_dir)
-
+    all_images = os.listdir(input_directory)
+    # Exclude hidden files
+    all_images = [f for f in all_images if not f.startswith('._')]
     # Ensure there are enough images in the directory
     if len(all_images) < max(sample_sizes):
-        raise ValueError(f"Input directory {input_dir} contains fewer than {max(sample_sizes)} images.")
+        raise ValueError(f"Input directory {input_directory} contains fewer than {max(sample_sizes)} images.")
 
     for size in sample_sizes:
+        print(f"Generating folder of size {size}")
         # Create a new subdirectory for each sample size
-        size_dir = os.path.join(output_dir, f"{prefix}_{size}")
+        size_dir = os.path.join(output_directory, f"{prefix}_{size}")
         os.makedirs(size_dir, exist_ok=True)
 
         # Randomly sample the specified number of images
@@ -24,25 +26,21 @@ def create_sample_sets(input_dir, output_dir, sample_sizes, prefix):
 
         for i, img in enumerate(sampled_images):
             # Copy each sampled image to the new directory with the specified naming convention
-            src = os.path.join(input_dir, img)
+            src = os.path.join(input_directory, img)
             dst = os.path.join(size_dir, img)
             shutil.copy(src, dst)
 
 
 # Define the output directories
-output_dir = "/Volumes/SANDISK32_2/fid_test"
+output_dir = "/Volumes/SANDISK32_2/benchmarking/fid_test/real"
 
 # Define the input directories
-real_dir_0 = os.path.join(output_dir, "real_0_200")
-real_dir_1 = os.path.join(output_dir, "real_1_200")
-
-
+input_dir = "/Volumes/SANDISK32_2/real_data/gan_test"
+prefix = "real"
+# fake_dir = os.path.join(output_dir, "fake_200")
 
 # Define the sample sizes
-sample_sizes = [180, 160, 140, 120, 100, 80, 60, 40, 20]
+sample_sizes = [200, 180, 160, 140, 120, 100, 80, 60, 40, 20]
 
-# Create the sample sets for real images
-create_sample_sets(real_dir_0, output_dir, sample_sizes, "real_0")
-
-# Create the sample sets for generated images
-create_sample_sets(real_dir_1, output_dir, sample_sizes, "real_1")
+# Create the sample sets from the input directory
+create_sample_sets(input_dir, output_dir, sample_sizes, prefix=prefix)
