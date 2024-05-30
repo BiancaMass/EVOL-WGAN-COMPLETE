@@ -1,9 +1,8 @@
 ---
-title: "best action"
-author: "Bianca Massacci"
-date: "5/9/2024"
-output: html_document
+title: "R Notebook"
+output: html_notebook
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -11,7 +10,7 @@ library(dplyr)
 ```
 
 ```{r}
-data_directory <- "/Volumes/SANDISK32_2/final_round3"
+data_directory <- "/Volumes/SANDISK32_2/final_round5"
 csv_files <- list.files(path = data_directory, pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
 csv_files <- csv_files[!grepl("/gan/", csv_files)]
 csv_files <- csv_files[!grepl("metadata", csv_files)]
@@ -21,6 +20,7 @@ print(csv_files)
 
 ```{r}
 # Initialize an empty list to store data frames
+print("Depth of the final circuits:")
 data_list <- list()
 
 # Loop through each CSV file
@@ -33,19 +33,18 @@ for (csv_file in csv_files) {
   
   # Assuming the column name containing the best actions is 'Best Actions', replace it with your actual column name
   best_actions <- df$`Best.Actions`
+  depth <- df$Depth
   
   # Create a data frame with folder name and best actions
-  data <- data.frame(Folder_Name = folder_name, Best_Action = best_actions)
+  data <- data.frame(folder = folder_name, depth = depth, best_action = best_actions)
+  
+  print(tail(depth, n=1))
   
   # Store the data frame in the list
   data_list[[folder_name]] <- data
   
 }
 
-```
-
-```{r}
-# data_list
 ```
 
 
@@ -65,63 +64,24 @@ for (df_name in names(data_list)) {
 rownames(combined_data) <- NULL
 ```
 
-```{r}
-combined_data
-```
 
-
+Maximum depth ever found:
 ```{r}
-combined_data[which(combined_data$Best_Action == ""), ]
-```
+max(combined_data$depth)
 
-```{r}
-combined_data <- combined_data[-which(combined_data$Best_Action == ""), ]
 ```
 
 ```{r}
 combined_data
 ```
 
-```{r}
-each_action <- combined_data %>%
-  count(Best_Action) %>%
-  mutate(percentage = n / sum(n) * 100)
-
-print(each_action)
-```
-
-```{r}
-58+6+16+7
-```
 
 
 
-```{r}
-library(ggplot2)
-
-Best_Action <- c("A", "D", "S", "M")
-#p <- ggplot(theTable, aes(x = Position)) + scale_x_discrete(limits = positions)
-
-# Create a bar plot
-ggplot(combined_data, aes(x = Best_Action)) +
-  geom_bar(fill = "#2A4E5B", width = 0.8, color = "black") +
-  ggtitle("Round 2: Best Action Weights") +
-  scale_x_discrete(limits = Best_Action) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(size = 18),
-    #axis.title.x = element_text(size = 14),
-    #axis.title.y = element_text(size = 14),
-    axis.text.x = element_text(size = 16),
-    axis.text.y = element_text(size = 14),
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank()
-  )
-
-```
 
 
-```{r}
-getwd()
-```
+
+
+
+
 

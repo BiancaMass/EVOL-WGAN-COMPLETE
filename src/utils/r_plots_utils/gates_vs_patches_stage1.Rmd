@@ -32,6 +32,7 @@ print(data_1)
 
 ```
 
+# Number of gates
 
 ```{r}
 # Create the plot
@@ -76,7 +77,7 @@ print(plot)
 plot <- ggplot(data_1, aes(x = factor(patches), y = n_u_gates)) +
   geom_boxplot(fill = "lightblue") +
   labs(title = "Number of U() and CNOT Gates vs Number of Patches",
-       subtitle = "Experiment Stage 1"
+       subtitle = "Experiment Stage 1",
        x = "Number of Patches",
        y = "Number of U Gates") +
   theme_minimal()
@@ -172,4 +173,99 @@ print(plot)
 ```
 
 
+# Number of parameters
+```{r}
+data_1
+```
+
+
+```{r}
+# Calculate the correlation coefficient
+correlation <- cor(data_1$patches, data_1$generator_parameters)
+print(paste("Correlation coefficient:", correlation))
+
+# Test the significance of the correlation
+correlation_test <- cor.test(data_1$patches, data_1$generator_parameters)
+print(correlation_test)
+```
+
+The results strongly suggest that there is a significant positive relationship between the number of patches and the total parameters in your data, with a p-value less than 0.05, and  we are also 95% confident that the true correlation coefficient lies between 0.3068 and 0.8954.
+
+```{r}
+# Create the plot
+plot <- ggplot(data_1, aes(x = patches, y = generator_parameters)) +
+  geom_point(position = position_jitter(width = 0.2, height = 0.2)) +
+  geom_smooth(method = "lm", se=TRUE, col = "blue") +
+  labs(title = "Number of patches vs total generator parameters",
+       x = "Patches",
+       y = "Generator Parameters") +
+  theme_minimal()
+
+# Display the plot
+print(plot)
+```
+
+
+# Generator parameters and FID scores
+
+```{r}
+# Calculate the correlation coefficient between FID scores and generator parameters
+correlation_fid_params <- cor(data_1$fid, data_1$generator_parameters)
+print(paste("Correlation coefficient:", correlation_fid_params))
+
+# Test the significance of the correlation
+correlation_test_fid_params <- cor.test(data_1$fid, data_1$generator_parameters)
+print(correlation_test_fid_params)
+```
+
+```{r}
+# Create the plot
+plot <- ggplot(data_1, aes(x = fid, y = generator_parameters)) +
+   geom_point(aes(shape = as.factor(patches)), size = 4, alpha = 0.7, color = "blue", position = position_jitter(width = 0.2, height = 0.2)) +
+  geom_smooth(method = "lm", se=TRUE, col = "blue") +
+  labs(title = "FID score vs Total Generator Parameters",
+       subtitle = "Experiment Stage 1",
+       x = "Generator Parameter",
+       y = "FID") +
+   scale_shape_discrete(name = "Patch Size") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+# Display the plot
+print(plot)
+```
+
+
+# Number of patches and FID
+
+```{r}
+# Calculate the correlation coefficient
+correlation <- cor(data_1$patches, data_1$fid)
+print(paste("Correlation coefficient:", correlation))
+
+# Test the significance of the correlation
+correlation_test <- cor.test(data_1$patches, data_1$fid)
+print(correlation_test)
+```
+
+# Number of patches and number of gates
+
+
+```{r}
+# Calculate the correlation coefficient
+correlation <- cor(data_1$patches, data_1$n_u_gates)
+print(paste("Correlation coefficient:", correlation))
+
+# Test the significance of the correlation
+correlation_test <- cor.test(data_1$patches, data_1$n_u_gates)
+print(correlation_test)
+```
 
