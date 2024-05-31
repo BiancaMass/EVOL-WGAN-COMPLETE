@@ -1,0 +1,358 @@
+---
+title: "all data analysis"
+author: "Bianca Massacci"
+date: "5/31/2024"
+output: html_document
+---
+
+# Load the libraries
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(ggcorrplot)
+library(GGally)
+```
+
+# Load the data
+```{r}
+# Specify the path to the Excel file
+file_path <- "/Users/bmassacci/main_folder/maastricht/academics/quantum_thesis/scripts/EVOL-WGAN-COMPLETE/output/all_results.xlsx"
+
+# Load the data from the first sheet
+all_data <- read_excel(file_path, sheet = 1)
+
+# Display the first few rows of the data to check it
+head(all_data)
+```
+
+# Preprocessing
+
+```{r}
+colnames(all_data)
+```
+
+
+```{r}
+print(paste0("Length of fid: ", length(all_data$fid), ". Type of fid: ", typeof(all_data$fid)))
+print(paste0("Length of emd_test: ", length(all_data$emd_test_gan), ". Type of e,d_test: ", typeof(all_data$emd_test_gan)))
+print(paste0("Length of visual_score: ", length(all_data$visual_score), ". Type of visual_score: ", typeof(all_data$visual_score)))
+```
+
+```{r}
+unique(all_data$visual_score)
+```
+
+```{r}
+head(all_data$visual_score, 15)
+```
+
+```{r}
+# Convert visual_score to numeric values
+all_data$visual_score_numeric <- as.numeric(factor(all_data$visual_score, 
+                                                   levels = c("very bad", "bad", "medium", "good", "very good"), 
+                                                   labels = c(1, 2, 3, 4, 5)))
+```
+
+```{r}
+head(all_data$visual_score_numeric, 15)
+```
+
+Check for NAs:
+```{r}
+print(paste("FID - number of NAs:", sum(is.na(all_data$fid))))
+print(paste("EMD test - number of NAs:", sum(is.na(all_data$emd_test_gan))))
+print(paste("Visual Score - number of NAs:", sum(is.na(all_data$visual_score_numeric))))
+```
+
+```{r}
+all_data %>%
+  select(fid, emd_test_gan) %>%
+  arrange(fid)
+```
+
+
+
+
+Normalize the data:
+```{r}
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+# Force the values between 0 and 1 for each of the evaluation metrics
+all_data_clean <- all_data %>%
+  mutate(
+    visual_score_numeric = normalize(visual_score_numeric),
+    fid = normalize(fid),
+    emd_test_gan = normalize(emd_test_gan)
+  )
+
+```
+
+
+
+# Calculate correlations
+
+```{r}
+# Calculate Pearson correlation coefficients
+pearson_correlation <- cor(all_data_clean[, c("visual_score_numeric", "fid", "emd_test_gan")], use = "complete.obs", method = "pearson")
+
+# Calculate Spearman correlation coefficients
+spearman_correlation <- cor(all_data_clean[, c("visual_score_numeric", "fid", "emd_test_gan")], use = "complete.obs", method = "spearman")
+
+# Display the correlation matrices
+pearson_correlation
+spearman_correlation
+
+```
+
+
+```{r}
+# Function to perform correlation test and extract p-value
+correlation_pvalue <- function(x, y, method) {
+  test <- cor.test(x, y, method = method)
+  return(test$p.value)
+}
+
+# Extract the relevant columns
+visual_score_numeric <- all_data_clean$visual_score_numeric
+fid <- all_data_clean$fid
+emd_test_gan <- all_data_clean$emd_test_gan
+
+# Pearson correlation p-values
+pearson_p_values <- matrix(NA, nrow = 3, ncol = 3)
+rownames(pearson_p_values) <- colnames(pearson_p_values) <- c("visual_score_numeric", "fid", "emd_test_gan")
+
+pearson_p_values[1, 2] <- correlation_pvalue(visual_score_numeric, fid, "pearson")
+pearson_p_values[1, 3] <- correlation_pvalue(visual_score_numeric, emd_test_gan, "pearson")
+pearson_p_values[2, 3] <- correlation_pvalue(fid, emd_test_gan, "pearson")
+pearson_p_values[2, 1] <- pearson_p_values[1, 2]
+pearson_p_values[3, 1] <- pearson_p_values[1, 3]
+pearson_p_values[3, 2] <- pearson_p_values[2, 3]
+
+# Spearman correlation p-values
+spearman_p_values <- matrix(NA, nrow = 3, ncol = 3)
+rownames(spearman_p_values) <- colnames(spearman_p_values) <- c("visual_score_numeric", "fid", "emd_test_gan")
+
+spearman_p_values[1, 2] <- correlation_pvalue(visual_score_numeric, fid, "spearman")
+spearman_p_values[1, 3] <- correlation_pvalue(visual_score_numeric, emd_test_gan, "spearman")
+spearman_p_values[2, 3] <- correlation_pvalue(fid, emd_test_gan, "spearman")
+spearman_p_values[2, 1] <- spearman_p_values[1, 2]
+spearman_p_values[3, 1] <- spearman_p_values[1, 3]
+spearman_p_values[3, 2] <- spearman_p_values[2, 3]
+
+```
+
+
+# Display the p-values
+
+```{r}
+print("Pearson p values:")
+pearson_p_values
+```
+
+```{r}
+print("Spearman p values:")
+spearman_p_values
+```
+
+# Summary of Findings:
+- Visual Score and FID: There is a strong and statistically significant negative correlation.
+- Visual Score and EMD Test GAN: There is a strong and statistically significant negative correlation.
+- FID and EMD Test GAN: There is a strong and statistically significant positive correlation.
+
+Given these significant correlations, it is clear that FID and EMD metrics are closely related to the visual scores, confirming that FID scores are indicative of the visual quality of the GAN outputs as you initially suspected.
+
+
+# Plotting
+
+```{r}
+# Scatter plot: visual_score_numeric vs fid
+ggplot(all_data_clean, aes(x = visual_score_numeric, y = fid)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Scatter Plot: Visual Score vs FID", x = "Visual Score (Numeric)", y = "FID")
+```
+
+
+```{r}
+# Scatter plot: visual_score_numeric vs emd_test_gan
+ggplot(all_data_clean, aes(x = visual_score_numeric, y = emd_test_gan)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Scatter Plot: Visual Score vs EMD Test GAN", x = "Visual Score (Numeric)", y = "EMD Test GAN")
+
+```
+
+
+```{r}
+# Scatter plot: fid vs emd_test_gan
+ggplot(all_data_clean, aes(x = fid, y = emd_test_gan)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Scatter Plot: FID vs EMD Test GAN", x = "FID", y = "EMD Test GAN")
+
+```
+
+
+
+```{r}
+# Scatter plot: fid vs emd_test_gan
+ggplot(all_data, aes(x = fid, y = emd_test_gan)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "FID vs EMD", 
+       subtitle = "All experiments",
+       x = "FID", y = "EMD") +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+
+```
+
+
+```{r}
+# Extract the relevant columns
+plot_data <- all_data_clean[, c("visual_score_numeric", "fid", "emd_test_gan")]
+
+# Custom function to create 1x3 plot with scatter plots and correlation coefficients
+custom_ggpairs <- function(data) {
+  # Create empty plot for diagonal
+  blank_plot <- ggplot() + theme_void()
+  
+  # Create individual scatter plots with smooth line
+  p1 <- ggplot(data, aes(x = visual_score_numeric, y = fid)) +
+    geom_point() +
+    geom_smooth(method = "lm", col = "blue") +
+    labs(x = "Visual Score (Numeric)", y = "FID")
+  
+  p2 <- ggplot(data, aes(x = visual_score_numeric, y = emd_test_gan)) +
+    geom_point() +
+    geom_smooth(method = "lm", col = "blue") +
+    labs(x = "Visual Score (Numeric)", y = "EMD Test GAN")
+  
+  p3 <- ggplot(data, aes(x = fid, y = emd_test_gan)) +
+    geom_point() +
+    geom_smooth(method = "lm", col = "blue") +
+    labs(x = "FID", y = "EMD Test GAN")
+  
+  # Create a 1x3 plot layout
+  gridExtra::grid.arrange(
+    p1, p2, p3,
+    ncol = 3,
+    top = "Pairwise Scatter Plots with Correlations"
+  )
+}
+
+# Call the custom function with the data
+custom_ggpairs(plot_data)
+
+```
+
+```{r}
+# Calculate the correlation matrix
+cor_matrix <- cor(all_data_clean[, c("visual_score_numeric", "fid", "emd_test_gan")], use = "complete.obs")
+
+# Melt the correlation matrix into a long format
+cor_melted <- melt(cor_matrix)
+
+# Create the heatmap
+ggplot(cor_melted, aes(x = Var1, y = Var2, fill = abs(value))) +
+  geom_tile() +
+  scale_fill_gradient2(low = "orange", high = "dark blue", mid = "white",
+                       midpoint = 0.6, limit = c(0.2, 1), space = "Lab", 
+                       name = "Correlation") +
+  geom_text(aes(label = round(abs(value), 2)), color = "black", size = 4) +
+  theme_minimal() +
+  labs(title = "Correlation Heatmap", x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+```
+
+
+
+```{r}
+# Box plot: fid grouped by visual_score_numeric
+ggplot(all_data, aes(x = as.factor(visual_score_numeric), y = fid)) +
+  geom_boxplot() +
+  labs(title = "FID vs Visual Score",
+       subtitle = "All experiments",
+       x = "Visual Score", y = "FID")+
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+```
+
+
+```{r}
+# Box plot: emd_test_gan grouped by visual_score_numeric
+ggplot(all_data, aes(x = as.factor(round(visual_score_numeric, digits = 1)), y = emd_test_gan)) +
+  geom_boxplot() +
+  labs(title = "EMD vs visual score",
+       subtitle = "All experiments",
+       x = "Visual Score", y = "EMD Test GAN") +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+
+
+
+
+```{r}
+# Calculate Pearson and Spearman correlations
+pearson_corr_fid <- cor.test(all_data_clean$fid, all_data_clean$visual_score_numeric, method = "pearson")
+pearson_corr_emd <- cor.test(all_data_clean$emd_test_gan, all_data_clean$visual_score_numeric, method = "pearson")
+
+spearman_corr_fid <- cor.test(all_data_clean$fid, all_data_clean$visual_score_numeric, method = "spearman")
+spearman_corr_emd <- cor.test(all_data_clean$emd_test_gan, all_data_clean$visual_score_numeric, method = "spearman")
+
+# Display results
+list(
+  pearson = list(
+    fid = pearson_corr_fid,
+    emd = pearson_corr_emd
+  ),
+  spearman = list(
+    fid = spearman_corr_fid,
+    emd = spearman_corr_emd
+  )
+)
+```
+
+```{r}
+# Linear regression models
+model_fid <- lm(visual_score_numeric ~ fid, data = all_data_clean)
+model_emd <- lm(visual_score_numeric ~ emd_test_gan, data = all_data_clean)
+
+# Summarize the models
+summary(model_fid)
+summary(model_emd)
+```
+
+
+
+
