@@ -1,0 +1,159 @@
+---
+title: "sample efficiency"
+author: "Bianca Massacci"
+date: "6/1/2024"
+output: html_document
+---
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(ggcorrplot)
+library(GGally)
+```
+
+# Load the data
+```{r}
+# Specify the path to the Excel file
+file_path <- "/Users/bmassacci/main_folder/maastricht/academics/quantum_thesis/scripts/EVOL-WGAN-COMPLETE/output/sample_efficiency.xlsx"
+
+# Load the data from the first sheet
+sample_efficiency_df <- read_excel(file_path, sheet = 1)
+
+# Display the first few rows of the data to check it
+head(sample_efficiency_df)
+```
+
+
+```{r}
+# Convert data to long format
+data_long <- melt(sample_efficiency_df, id.vars = c('metric', 'sample_size'))
+```
+
+```{r}
+# Split data into FID and EMD
+fid_data <- subset(data_long, metric == 'FID')
+emd_data <- subset(data_long, metric == 'EMD')
+```
+
+
+```{r}
+# Plot for FID
+fid_plot <- ggplot(fid_data, aes(x = sample_size, y = value, color = variable)) +
+  geom_line(size=1.5) +
+  geom_point() +
+  scale_color_manual(values = c(
+    "Real" = "#117733",    
+    "Classic_WGANGP" = "#88CCEE",
+    "PQWGAN" = "#CC6677",
+    "F_04_L2" = "#DDCC77",
+    "F_04_L3" = "#332288"
+  ),
+  labels = c(
+    "Real" = "Real data",
+    "Classic_WGANGP" = "Classic GAN",
+    "PQWGAN" = "PQWGAN",
+    "F_04_L2" = "F04-L2",
+    "F_04_L3" = "F04-L3"
+  )
+  ) +
+  scale_y_log10() +
+  labs(title = "FID Sample Efficiency", x = "Sample Size", y = "FID Value", color = "Model") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), # face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+print(fid_plot)
+
+```
+
+```{r}
+emd_data$variable %>% unique()
+```
+
+
+
+```{r}
+# Plot for EMD
+fid_plot <- ggplot(emd_data, aes(x = sample_size, y = value, color = variable)) +
+  geom_line(size=1.5) +
+  geom_point() +
+  scale_color_manual(values = c(
+    "Real" = "#117733",    
+    "Classic_WGANGP" = "#88CCEE",
+    "PQWGAN" = "#CC6677",
+    "F_04_L2" = "#DDCC77",
+    "F_04_L3" = "#332288"
+  ),
+  labels = c(
+    "Real" = "Real data",
+    "Classic_WGANGP" = "Classic GAN",
+    "PQWGAN" = "PQWGAN",
+    "F_04_L2" = "F04-L2",
+    "F_04_L3" = "F04-L3"
+  )
+  ) +
+  scale_y_log10() +
+  labs(title = "EMD Sample Efficiency", x = "Sample Size", y = "EMD Value", color = "Model") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), # face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+print(fid_plot)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
