@@ -11,6 +11,7 @@ library(ggplot2)
 library(reshape2)
 library(ggcorrplot)
 library(GGally)
+library(tidyr)
 ```
 
 # Load the data
@@ -120,9 +121,48 @@ print(fid_plot)
 
 
 
+# Statistical tets
+
+```{r}
+data_melt_fid <- sample_efficiency_df %>%
+  filter(metric == "FID") %>%
+  pivot_longer(cols = -c(metric, sample_size), names_to = "Model", values_to = "Performance")
+
+data_melt_emd <- sample_efficiency_df %>%
+  filter(metric == "EMD") %>%
+  pivot_longer(cols = -c(metric, sample_size), names_to = "Model", values_to = "Performance")
+
+```
+
+## FID
+### ANOVA
+```{r}
+anova_model_fid <- aov(Performance ~ Model, data = data_melt_fid)
+summary(anova_model_fid)
+```
+
+### Tukey's HSD
+```{r}
+# Perform Tukey's HSD post-hoc test
+tukey_result_fid <- TukeyHSD(anova_model_fid)
+print(tukey_result_fid)
+```
 
 
 
+## EMD
+### ANOVA
+```{r}
+anova_model_emd <- aov(Performance ~ Model, data = data_melt_emd)
+summary(anova_model_emd)
+```
+
+### Tukey's HSD
+```{r}
+# Perform Tukey's HSD post-hoc test
+tukey_result_emd <- TukeyHSD(anova_model_emd)
+print(tukey_result_emd)
+```
 
 
 

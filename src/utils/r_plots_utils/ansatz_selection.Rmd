@@ -1,0 +1,353 @@
+---
+title: "architecture_analysis"
+author: "Bianca Massacci"
+date: "6/2/2024"
+output: html_document
+---
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(ggcorrplot)
+library(GGally)
+```
+
+# Load the data
+```{r}
+# Specify the path to the Excel file
+file_path <- "/Users/bmassacci/main_folder/maastricht/academics/quantum_thesis/scripts/EVOL-WGAN-COMPLETE/output/all_results.xlsx"
+
+# Load the data from the first sheet
+all_data <- read_excel(file_path, sheet = 1)
+all_data$emd_evol_train <- as.numeric(ifelse(all_data$emd_evol_train == "NA", NA, all_data$emd_evol_train))
+
+all_data$emd_evol_VALID <- as.numeric(ifelse(all_data$emd_evol_VALID == "NA", NA, all_data$emd_evol_VALID))
+
+all_data$visual_score <- factor(all_data$visual_score, levels = c("very bad", "bad", "medium", "good"), labels = c(1, 2, 3, 4))
+
+
+# Display the first few rows of the data to check it
+head(all_data)
+```
+
+
+```{r}
+colnames(all_data)
+```
+
+```{r}
+patches28_data <- subset(all_data, n_patches == 28)
+patches28_data <- patches28_data[, c("round", "folder_name", "fid", "emd_test_gan", "n_cx_gates", "generator_parameters", "n_layers", "n_u_gates", "visual_score")]
+
+```
+
+
+# FID
+Order the filtered data by the 'fid' column in ascending order:
+```{r}
+best_fid_circuits <- patches28_data[order(patches28_data$fid), ]
+best_fid_circuits
+```
+
+```{r}
+top_n <- 10
+best_fid_circuits <- head(best_fid_circuits, top_n)
+
+best_fid_circuits
+```
+
+
+
+# EMD
+```{r}
+best_emd_circuits <- patches28_data[order(patches28_data$emd_test_gan), ]
+best_emd_circuits
+```
+
+```{r}
+top_n <- 10
+best_emd_circuits <- head(best_emd_circuits, top_n)
+
+best_emd_circuits
+```
+
+
+```{r}
+patches28_data$fid_rank <- rank(patches28_data$fid, ties.method = "first")
+patches28_data$emd_rank <- rank(patches28_data$emd_test_gan, ties.method = "first")
+```
+
+```{r}
+# Combine ranks by summing them
+patches28_data$combined_rank <- patches28_data$fid_rank + patches28_data$emd_rank
+```
+
+```{r}
+# Order by combined rank
+best_combined_circuits <- patches28_data[order(patches28_data$combined_rank), ]
+
+# Select the top N circuits
+top_n <- 10
+best_combined_circuits <- head(best_combined_circuits, top_n)
+
+# Select relevant columns for the output
+best_combined_circuits <- best_combined_circuits[, c("round", "folder_name", "fid", "emd_test_gan", "n_cx_gates", "generator_parameters", "n_layers", "n_u_gates", "visual_score", "combined_rank")]
+
+best_combined_circuits
+```
+
+```{r}
+best_combined_circuits %>%
+  filter(round == 5) %>%
+  select(folder_name, fid, emd_test_gan, visual_score, generator_parameters, n_cx_gates, n_u_gates)
+```
+
+
+```{r}
+# Order by combined rank (highest combined rank will be worst)
+worst_combined_circuits <- patches28_data[order(-patches28_data$combined_rank), ]
+
+# Select the top N worst circuits
+top_n <- 10
+worst_combined_circuits <- head(worst_combined_circuits, top_n)
+
+# Select relevant columns for the output
+worst_combined_circuits <- worst_combined_circuits[, c("round", "folder_name", "fid", "emd_test_gan", "n_cx_gates", "generator_parameters", "n_layers", "n_u_gates", "visual_score", "combined_rank")]
+
+worst_combined_circuits
+
+```
+
+
+```{r}
+worst_combined_circuits %>%
+  filter(round == 5) %>%
+  select(folder_name, fid, emd_test_gan, visual_score, generator_parameters, n_cx_gates, n_u_gates)
+```
+
+
+
+
+# Look for circuits with lots of params but bad performance
+
+```{r}
+# Calculate the 20th percentile thresholds for 'fid' and 'emd_test_gan'
+fid_threshold <- quantile(patches28_data$fid, 0.40)
+emd_threshold <- quantile(patches28_data$emd_test_gan, 0.40)
+
+# Print the thresholds
+fid_threshold
+emd_threshold
+```
+
+
+```{r}
+# Filter well-performing ansatze based on the calculated thresholds
+well_performing <- subset(patches28_data, fid <= fid_threshold & emd_test_gan <= emd_threshold)
+
+# Display the well-performing ansatze
+head(well_performing)
+```
+
+```{r}
+# Extract parameter characteristics from well-performing ansatze
+well_params <- well_performing[, c("n_cx_gates", "generator_parameters", "n_layers", "n_u_gates")]
+
+# Display the extracted parameters
+head(well_params)
+
+```
+
+```{r}
+# Calculate the 80th percentile thresholds for 'fid' and 'emd_test_gan'
+fid_poor_threshold <- quantile(patches28_data$fid, 0.80)
+emd_poor_threshold <- quantile(patches28_data$emd_test_gan, 0.80)
+
+# Print the thresholds
+fid_poor_threshold
+emd_poor_threshold
+
+```
+
+```{r}
+# Filter poorly performing ansatze based on the calculated thresholds
+poor_performing <- subset(patches28_data, fid >= fid_poor_threshold | emd_test_gan >= emd_poor_threshold)
+
+# Display the poorly performing ansatze
+head(poor_performing)
+```
+
+```{r}
+# Calculate the parameter threshold (e.g., median or 80th percentile) based on well-performing ansatze
+param_threshold <- quantile(well_performing$generator_parameters, 0.80)
+
+# Print the threshold
+param_threshold
+
+```
+
+```{r}
+# Find poor-performing ansatze with generator_parameters >= param_threshold
+high_param_poor_ansatze <- subset(poor_performing, generator_parameters >= param_threshold)
+
+# Display the result
+head(high_param_poor_ansatze)
+```
+
+
+
+
+
+
+
+
+
+# Plot performance over rounds
+
+## All data
+
+```{r}
+# Plot for FID
+all_data$round_numeric <- as.numeric(all_data$round)
+
+ggplot(all_data, aes(x = round_numeric, y = fid)) +
+  geom_boxplot(aes(group = round_numeric), outlier.shape = NA) +
+  geom_jitter(aes(color = as.factor(round_numeric)), width = 0.2, alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "blue") +
+  labs(title = "FID performance over stages",
+       subtitle = "All data",
+       x = "Stage", y = "FID") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(
+    plot.title = element_text(size = 18), # face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+```
+
+
+```{r}
+# Plot for EMD
+ggplot(all_data, aes(x = round_numeric, y = emd_test_gan)) +
+  geom_boxplot(aes(group = round_numeric), outlier.shape = NA) +
+  geom_jitter(aes(color = as.factor(round_numeric)), width = 0.2, alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "blue") +
+  labs(title = "EMD Performance Over Rounds",
+        subtitle = "All data",
+       x = "Round", y = "FID")+
+  labs(title = "EMD performance over stages",
+       subtitle = "All data",
+       x = "Stage", y = "EMD") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(
+    plot.title = element_text(size = 18), # face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+
+```{r}
+# Convert 'round' to numeric for the smooth function
+patches28_data$round_numeric <- as.numeric(patches28_data$round)
+
+# Plot for FID with enhancements
+ggplot(patches28_data, aes(x = round_numeric, y = fid), outlier.shape = NA) +
+  geom_boxplot(aes(group = round_numeric)) +
+  geom_jitter(aes(color = as.factor(round_numeric)), width = 0.2, alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "blue") +
+  labs(title = "FID performance over stages",
+       subtitle = "Only 28 patches configurations",
+       x = "Stage", y = "FID") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(
+    plot.title = element_text(size = 18), # face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+```{r}
+# Convert 'round' to numeric for the smooth function
+patches28_data$round_numeric <- as.numeric(patches28_data$round)
+
+# Plot for FID with enhancements
+ggplot(patches28_data, aes(x = round_numeric, y = emd_test_gan)) +
+  geom_boxplot(aes(group = round_numeric), outlier.shape = NA) +
+  geom_jitter(aes(color = as.factor(round_numeric)), width = 0.2, alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "blue") +
+  labs(title = "EMD performance over stages",
+       subtitle = "Only 28 patches configurations",
+       x = "Stage", y = "EMD") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(
+    plot.title = element_text(size = 18), # face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
