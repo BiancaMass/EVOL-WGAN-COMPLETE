@@ -355,4 +355,87 @@ summary(model_emd)
 
 
 
+# FID SCORE vs generator parameters
+
+```{r}
+# Calculate the correlation and test for statistical significance
+cor_test_result <- cor.test(all_data$fid, all_data$generator_parameters)
+
+# Extract and print the correlation coefficient
+correlation_coefficient <- cor_test_result$estimate
+cat("Correlation Coefficient:", correlation_coefficient, "\n")
+
+# Extract and print the p-value
+p_value <- cor_test_result$p.value
+cat("P-value:", p_value, "\n")
+```
+
+
+```{r}
+all_data %>%
+ # filter(n_patches==28) %>%
+ #filter(n_layers==1) %>%
+ # filter(generator_parameters<1000)%>% # remove one outlier
+  ggplot(aes(x = generator_parameters, y = fid)) +
+   geom_point() +
+  geom_smooth(method = "lm", se=TRUE, col = "blue") +
+  labs(title = "FID vs number of total parameters",
+       subtitle = "All data",
+       x = "Generator Parameter",
+       y = "FID") +
+   scale_shape_discrete(name = "Patch Size") +
+  theme_minimal() +
+    scale_x_log10() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+
+# EMD scores vs generator total parameters
+```{r}
+# Calculate the correlation and test for statistical significance
+cor_test_result <- cor.test(all_data$emd_test_gan, all_data$generator_parameters)
+
+# Extract and print the correlation coefficient
+correlation_coefficient <- cor_test_result$estimate
+cat("Correlation Coefficient:", correlation_coefficient, "\n")
+
+# Extract and print the p-value
+p_value <- cor_test_result$p.value
+cat("P-value:", p_value, "\n")
+```
+
+```{r}
+all_data %>%
+ # filter(n_patches==28) %>%
+ #filter(n_layers==1) %>%
+ # filter(generator_parameters<1000)%>% # remove one outlier
+  ggplot(aes(x = generator_parameters, y = emd_test_gan)) +
+   geom_point() +
+  geom_smooth(method = "lm", se=TRUE, col = "blue") +
+  labs(title = "EMD vs number of total parameters",
+       subtitle = "All data",
+       x = "Generator Parameter",
+       y = "EMD") +
+    scale_x_log10() +
+   scale_shape_discrete(name = "Patch Size") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
 
