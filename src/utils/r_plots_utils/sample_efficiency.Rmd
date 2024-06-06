@@ -102,7 +102,7 @@ fid_plot <- ggplot(emd_data, aes(x = sample_size, y = value, color = variable)) 
     "F_04_L3" = "F04-L3"
   )
   ) +
-  scale_y_log10() +
+  #scale_y_log10() +
   labs(title = "EMD Sample Efficiency", x = "Sample Size", y = "EMD Value", color = "Model") +
   theme_minimal() +
   theme(

@@ -439,3 +439,50 @@ all_data %>%
 ```
 
 
+
+
+```{r}
+all_data
+```
+
+
+```{r}
+# Assuming all_data is your dataframe with columns 'round' and 'FID'
+ggplot(all_data, aes(x = factor(round), y = fid)) +
+  geom_boxplot() +
+  labs(title = "Distribution of FID by Stage",
+       subtitle = "All data",
+       x = "Round",
+       y = "FID") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+```{r}
+# Assuming all_data is your dataframe with columns 'round' and 'FID'
+ggplot(all_data, aes(x = factor(round), y = emd_test_gan)) +
+  geom_boxplot() +
+  labs(title = "Distribution of EMD by Stage",
+       subtitle = "All data",
+       x = "Round",
+       y = "EMD") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+

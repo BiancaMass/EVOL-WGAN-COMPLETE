@@ -15,28 +15,25 @@ library(ggplot2)
 library(tidyr)
 ```
 
-Create the data frame with the round 2 results
-
 ```{r}
-data_1 <- data.frame(
-  patches = c(1, 1, 1, 2, 2, 2, 7, 7, 7, 14, 14, 14, 28, 28, 28),
-  qubits = c(10, 10, 10, 9, 9, 9, 7, 7, 7, 6, 6, 6, 5, 5, 5),
-  fid = c(25.01, 25.01, 22.991, 23.074, 23.687, 24.111, 19.517, 19.055, 16.76, 17.478, 3.907, 17.642, 4.687, 20.391, 4.46),
-  n_u_gates = c(1, 3, 4, 2, 2, 2, 3, 2, 1, 1, 5, 1, 5, 4, 9),
-  n_cx_gates = c(2, 1, 2, 2, 3, 0, 2, 2, 2, 2, 2, 1, 1, 2, 4),
-  generator_parameters = c(3, 18, 36, 12, 24, 36, 63, 84, 63, 42, 420, 126, 420, 672, 2268)
-)
+# Specify the path to the Excel file
+file_path <- "/Users/bmassacci/main_folder/maastricht/academics/quantum_thesis/scripts/EVOL-WGAN-COMPLETE/output/all_results.xlsx"
 
-# View the data
-print(data_1)
+# Load the data from the first sheet
+all_data <- read_excel(file_path, sheet = 1)
 
+# Display the first few rows of the data to check it
+head(all_data)
+
+data_1 <- all_data %>%
+  filter(round == 1)
 ```
 
 # Number of gates
 
 ```{r}
 # Create the plot
-plot <- ggplot(data_1, aes(x = patches, y = n_u_gates)) +
+plot <- ggplot(data_1, aes(x = n_patches, y = n_u_gates)) +
   geom_point(position = position_jitter(width = 0.2, height = 0.2)) +
   geom_smooth(method = "lm", col = "blue") +
   labs(title = "Number of U Gates vs Number of Patches",
@@ -53,13 +50,13 @@ print(plot)
 ```{r}
 
 summary_data <- data_1 %>%
-  group_by(patches) %>%
+  group_by(n_patches) %>%
   summarize(mean_n_u_gates = mean(n_u_gates))
 
 summary_data
 
 # Create the bar plot
-plot <- ggplot(summary_data, aes(x = factor(patches), y = mean_n_u_gates)) +
+plot <- ggplot(summary_data, aes(x = factor(n_patches), y = mean_n_u_gates)) +
   geom_bar(stat = "identity", fill = "steelblue") +
   labs(title = "Mean Number of U Gates by Number of Patches",
        x = "Number of Patches",
@@ -74,7 +71,7 @@ print(plot)
 ```{r}
 
 # Create the box plot
-plot <- ggplot(data_1, aes(x = factor(patches), y = n_u_gates)) +
+plot <- ggplot(data_1, aes(x = factor(n_patches), y = n_u_gates)) +
   geom_boxplot(fill = "lightblue") +
   labs(title = "Number of U() and CNOT Gates vs Number of Patches",
        subtitle = "Experiment Stage 1",
@@ -92,7 +89,7 @@ print(plot)
 data_long <- pivot_longer(data_1, cols = c(n_u_gates, n_cx_gates), names_to = "gate_type", values_to = "count")
 
 # Create the box plot with dodged positions
-plot <- ggplot(data_long, aes(x = factor(patches), y = count, fill = gate_type)) +
+plot <- ggplot(data_long, aes(x = factor(n_patches), y = count, fill = gate_type)) +
   geom_boxplot(position = position_dodge(0.8), alpha = 0.7) +
   labs(title = "Distribution of U Gates and CX Gates by Number of Patches",
        x = "Number of Patches",
@@ -107,7 +104,7 @@ print(plot)
 
 ```{r}
 # Create the scatter plot with annotations
-plot <- ggplot(data_1, aes(x = patches, y = n_u_gates)) +
+plot <- ggplot(data_1, aes(x = n_patches, y = n_u_gates)) +
   geom_point() +
   geom_text(aes(label = n_u_gates), vjust = -1, hjust = 1.2) +
   labs(title = "Number of U Gates vs Number of Patches",
@@ -125,7 +122,7 @@ print(plot)
 data_long <- pivot_longer(data_1, cols = c(n_u_gates, n_cx_gates), names_to = "gate_type", values_to = "count")
 
 # Create the scatter plot with jitter
-plot <- ggplot(data_long, aes(x = factor(patches), y = count, color = gate_type)) +
+plot <- ggplot(data_long, aes(x = factor(n_patches), y = count, color = gate_type)) +
   geom_jitter(width = 0.2, height = 0.2) +
   labs(title = "Number of U Gates and CX Gates by Number of Patches",
        x = "Number of Patches",
@@ -143,11 +140,11 @@ print(plot)
 summary_data <- data_1 %>%
   pivot_longer(cols = c(n_u_gates, n_cx_gates), names_to = "gate_type", values_to = "count") %>%
   mutate(gate_type = recode(gate_type, n_u_gates = "U(θ,ϕ,λ)", n_cx_gates = "CNOT")) %>%
-  group_by(patches, gate_type) %>%
+  group_by(n_patches, gate_type) %>%
   summarise(mean_count = mean(count), sd_count = sd(count))
 
 # Create the bar plot with error bars
-plot <- ggplot(summary_data, aes(x = factor(patches), y = mean_count, fill = gate_type)) +
+plot <- ggplot(summary_data, aes(x = factor(n_patches), y = mean_count, fill = gate_type)) +
   geom_bar(stat = "identity", position = position_dodge(0.8), width = 0.7) +
   geom_errorbar(aes(ymin = mean_count - sd_count, ymax = mean_count + sd_count), 
                 position = position_dodge(0.8), width = 0.2) +
@@ -181,11 +178,11 @@ data_1
 
 ```{r}
 # Calculate the correlation coefficient
-correlation <- cor(data_1$patches, data_1$generator_parameters)
+correlation <- cor(data_1$n_patches, data_1$generator_parameters)
 print(paste("Correlation coefficient:", correlation))
 
 # Test the significance of the correlation
-correlation_test <- cor.test(data_1$patches, data_1$generator_parameters)
+correlation_test <- cor.test(data_1$n_patches, data_1$generator_parameters)
 print(correlation_test)
 ```
 
@@ -193,10 +190,11 @@ The results strongly suggest that there is a significant positive relationship b
 
 ```{r}
 # Create the plot
-plot <- ggplot(data_1, aes(x = patches, y = generator_parameters)) +
+plot <- ggplot(data_1, aes(x = n_patches, y = generator_parameters)) +
   geom_point(position = position_jitter(width = 0.2, height = 0.2)) +
   geom_smooth(method = "lm", se=TRUE, col = "blue") +
   labs(title = "Number of patches vs total generator parameters",
+       subtitle = "Stage 1",
        x = "Patches",
        y = "Generator Parameters") +
   theme_minimal()
@@ -219,9 +217,21 @@ print(correlation_test_fid_params)
 ```
 
 ```{r}
+# Calculate the correlation coefficient between EMD scores and generator parameters
+correlation_fid_params <- cor(data_1$emd_test_gan, data_1$generator_parameters)
+print(paste("Correlation coefficient:", correlation_fid_params))
+
+# Test the significance of the correlation
+correlation_test_fid_params <- cor.test(data_1$emd_test_gan, data_1$generator_parameters)
+print(correlation_test_fid_params)
+```
+
+
+
+```{r}
 # Create the plot
 plot <- ggplot(data_1, aes(x = fid, y = generator_parameters)) +
-   geom_point(aes(shape = as.factor(patches)), size = 4, alpha = 0.7, color = "blue", position = position_jitter(width = 0.2, height = 0.2)) +
+   geom_point(aes(shape = as.factor(n_patches)), size = 4, alpha = 0.7, color = "blue", position = position_jitter(width = 0.2, height = 0.2)) +
   geom_smooth(method = "lm", se=TRUE, col = "blue") +
   labs(title = "FID score vs Total Generator Parameters",
        subtitle = "Experiment Stage 1",
@@ -248,11 +258,22 @@ print(plot)
 
 ```{r}
 # Calculate the correlation coefficient
-correlation <- cor(data_1$patches, data_1$fid)
+correlation <- cor(data_1$n_patches, data_1$fid)
 print(paste("Correlation coefficient:", correlation))
 
 # Test the significance of the correlation
-correlation_test <- cor.test(data_1$patches, data_1$fid)
+correlation_test <- cor.test(data_1$n_patches, data_1$fid)
+print(correlation_test)
+```
+
+
+```{r}
+# Calculate the correlation coefficient
+correlation <- cor(data_1$n_patches, data_1$emd_test_gan)
+print(paste("Correlation coefficient:", correlation))
+
+# Test the significance of the correlation
+correlation_test <- cor.test(data_1$n_patches, data_1$emd_test_gan)
 print(correlation_test)
 ```
 
@@ -261,11 +282,11 @@ print(correlation_test)
 
 ```{r}
 # Calculate the correlation coefficient
-correlation <- cor(data_1$patches, data_1$n_u_gates)
+correlation <- cor(data_1$n_patches, data_1$n_u_gates)
 print(paste("Correlation coefficient:", correlation))
 
 # Test the significance of the correlation
-correlation_test <- cor.test(data_1$patches, data_1$n_u_gates)
+correlation_test <- cor.test(data_1$n_patches, data_1$n_u_gates)
 print(correlation_test)
 ```
 
