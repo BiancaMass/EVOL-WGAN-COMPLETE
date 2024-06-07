@@ -32,11 +32,11 @@ def create_sample_sets(input_directory, output_directory, sample_sizes, prefix):
 
 
 # Define the output directories
-output_dir = "/Volumes/SANDISK32_2/benchmarking/fid_test/real"
+output_dir = "/Volumes/SANDISK32_2/benchmarking/fid_test/F_04/"
 
 # Define the input directories
-input_dir = "/Volumes/SANDISK32_2/real_data/gan_test"
-prefix = "real"
+input_dir = "/Volumes/SANDISK32_2/final_round5/24_05_18_21_36_23/fid_images/fake"
+prefix = "F_04"
 # fake_dir = os.path.join(output_dir, "fake_200")
 
 # Define the sample sizes

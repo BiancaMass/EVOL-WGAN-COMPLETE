@@ -450,9 +450,9 @@ all_data
 # Assuming all_data is your dataframe with columns 'round' and 'FID'
 ggplot(all_data, aes(x = factor(round), y = fid)) +
   geom_boxplot() +
-  labs(title = "Distribution of FID by Stage",
+  labs(title = "FID by Stage",
        subtitle = "All data",
-       x = "Round",
+       x = "Stage",
        y = "FID") +
   theme_minimal() +
   theme(
@@ -470,9 +470,9 @@ ggplot(all_data, aes(x = factor(round), y = fid)) +
 # Assuming all_data is your dataframe with columns 'round' and 'FID'
 ggplot(all_data, aes(x = factor(round), y = emd_test_gan)) +
   geom_boxplot() +
-  labs(title = "Distribution of EMD by Stage",
+  labs(title = "EMD by Stage",
        subtitle = "All data",
-       x = "Round",
+       x = "Stage",
        y = "EMD") +
   theme_minimal() +
   theme(

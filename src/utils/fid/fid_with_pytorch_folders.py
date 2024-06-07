@@ -25,59 +25,68 @@ randn_true = gan_config.RANDN
 # STUFF TO CHANGE
 patch_shape = (1, 28)
 N_ANCILLAS = 1
-current_folder = "24_05_18_16_40_18"
+n_layers = 1
+# current_folder = "24_05_24_13_56_59"
 
-source_folder = "/Volumes/SANDISK32_2/final_round5"
-last_generator = "generator-3180.pt"
+source_folder = "/Volumes/SANDISK32_2/weight_experiments_at_the_end/weight_generated_lhs"
+last_generator = "generator-620.pt"
 # END STUFF TO CHANGE
 
 n_sub_generators = int(image_side / (int(patch_shape[0])))
 N_DATA_QUBITS = math.ceil(math.log(int((image_side * image_side) / n_sub_generators), 2))
-n_layers = 1
 n_tot_qubits = N_DATA_QUBITS + N_ANCILLAS
 
 
-folder = os.path.join(source_folder, current_folder)
+current_folders = os.listdir(source_folder)
 
-print(f'Going over folder {folder}')
+for current_folder in current_folders:
 
-output_folder = os.path.join(folder, "fid_images")
+    if current_folder.startswith("._"):
+        continue
 
-fake_folder = os.path.join(output_folder, "fake")
-if not os.path.exists(fake_folder):
-    os.makedirs(fake_folder)
+    else:
 
-path_to_qasm_file = os.path.join(folder, "evol", "final_best_circuit.qasm")
-path_to_last_generator = os.path.join(folder, "gan", last_generator)
+        folder = os.path.join(source_folder, current_folder)
 
-n_images_to_compare = 200
+        print(f'Going over folder {folder}')
 
-print("Initializing generator")
-generator = QuantumGeneratorImported(image_shape=(channels, image_side, image_side),
-                                     qasm_file_path=path_to_qasm_file,
-                                     n_ancillas=general_configs.N_ANCILLAS,
-                                     n_sub_generators=n_sub_generators,
-                                     n_layers=n_layers)
-generator = generator.to(device)
-generator.load_state_dict(torch.load(path_to_last_generator, map_location=torch.device('cpu')))
+        output_folder = os.path.join(folder, "fid_images")
 
-# Generate fake images
-print("Generating images")
-z = torch.randn(n_images_to_compare, n_tot_qubits, device=device) if randn_true else \
-    torch.rand(n_images_to_compare, n_tot_qubits, device=device)
-fake_images = generator(z)
+        fake_folder = os.path.join(output_folder, "fake")
+        if not os.path.exists(fake_folder):
+            os.makedirs(fake_folder)
 
-print("Saving the images")
-for index, img in enumerate(fake_images):
-    # Constructs file path
-    file_path = os.path.join(fake_folder, f'image_{index + 1:03d}.png')
-    # Save the image
-    save_image(img, file_path)
+        path_to_qasm_file = os.path.join(folder, "evol", "final_best_circuit.qasm")
+        path_to_last_generator = os.path.join(folder, "gan", last_generator)
 
-print("Clearing cache")
-del generator
-gc.collect()
-print("*** DONE ***")
+        n_images_to_compare = 200
+
+        print("Initializing generator")
+        generator = QuantumGeneratorImported(image_shape=(channels, image_side, image_side),
+                                             qasm_file_path=path_to_qasm_file,
+                                             n_ancillas=general_configs.N_ANCILLAS,
+                                             n_sub_generators=n_sub_generators,
+                                             n_layers=n_layers)
+        generator = generator.to(device)
+        generator.load_state_dict(torch.load(path_to_last_generator, map_location=torch.device('cpu')))
+
+        # Generate fake images
+        print("Generating images")
+        z = torch.randn(n_images_to_compare, n_tot_qubits, device=device) if randn_true else \
+            torch.rand(n_images_to_compare, n_tot_qubits, device=device)
+        fake_images = generator(z)
+
+        print("Saving the images")
+        for index, img in enumerate(fake_images):
+            # Constructs file path
+            file_path = os.path.join(fake_folder, f'image_{index + 1:03d}.png')
+            # Save the image
+            save_image(img, file_path)
+
+        print("Clearing cache")
+        del generator
+        gc.collect()
+        print("*** DONE ***")
 
 # Then, on the terminal call (second pooling layer)
 # python -m pytorch_fid path/to/dataset1 path/to/dataset2 --dims 192

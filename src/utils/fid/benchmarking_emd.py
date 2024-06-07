@@ -1,7 +1,9 @@
 import os
 import numpy as np
 from PIL import Image
-from scipy.stats import wasserstein_distance
+from scipy.stats import wasserstein_distance_nd
+
+"""For benchmarking the metrics (29, 40, .... 200)"""
 
 def load_images_from_directory(directory):
     images = []
@@ -13,6 +15,7 @@ def load_images_from_directory(directory):
             images.append(img_array)
     return np.array(images)
 
+
 def normalize_images(images, mean=0.5, std=0.5):
     # Normalize images to have the specified mean and standard deviation
     images = images / 255.0  # Scale pixel values to [0, 1]  # (should not be necessary with my data)
@@ -22,14 +25,14 @@ def normalize_images(images, mean=0.5, std=0.5):
 
 
 base_real_images_dir = "/Volumes/SANDISK32_2/benchmarking/fid_test/real/"
-base_fake_images_dir = "/Volumes/SANDISK32_2/benchmarking/fid_test/F_04_L3"
+base_fake_images_dir = "/Volumes/SANDISK32_2/benchmarking/fid_test/real_1"
 
 real_subfolders = [name for name in os.listdir(base_real_images_dir) if os.path.isdir(os.path.join(base_real_images_dir, name))]
 fake_subfolders = [name for name in os.listdir(base_fake_images_dir) if os.path.isdir(os.path.join(base_fake_images_dir, name))]
 
 # Filter subfolders to match the pattern "real_x" and "fake_x"
 real_subfolders = sorted([folder for folder in real_subfolders if folder.startswith("real_")])
-fake_subfolders = sorted([folder for folder in fake_subfolders if folder.startswith("F_04_L3")])
+fake_subfolders = sorted([folder for folder in fake_subfolders if folder.startswith("real_1")])
 
 for real_folder, fake_folder in zip(real_subfolders, fake_subfolders):
     real_images_dir = os.path.join(base_real_images_dir, real_folder)
@@ -45,7 +48,7 @@ for real_folder, fake_folder in zip(real_subfolders, fake_subfolders):
         print(f"Skipping {real_folder} and {fake_folder} due to unequal number of images.")
         continue
 
-    emd = wasserstein_distance(real_images.flatten(), fake_images.flatten())
+    emd = wasserstein_distance_nd(real_images, fake_images)
     folder_name = real_folder.split('_')[1]  # Extract number from folder name
 
     print(f"EMD {folder_name}: {emd}")
