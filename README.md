@@ -19,29 +19,36 @@ digits 0 and 1. The results highlight the feasibility of using architectures tha
 hardware-efficient ansatz to generate images of comparable quality to the current state-of-the-art, and the 
 evolutionary algorithm’s potential in discovering superior configurations.
 
-## Example 
+## Example Output
 
-Example results. 
+Below a plot of original data and generated images with various models:
+
+a) Original images from the MNIST datasets.
+
+b) Images generated with a fully classical model.
+
+c) Images generated with the EWGAN-GP (the model in this repository).
+
+d) Images generated with SoA [PQWGAN](https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation) model.
+
 
 <table>
   <tr>
     <td style="text-align:center;">
-      <img src="images/REAL_FID.png" width="150"><br>
-      <em> Original from the MNIST datasets.</em>
+      <img src="images/REAL_FID.png" width="200"><br>
+      <em>a)</em>
     </td>
     <td style="text-align:center;">
-      <img src="images/Classic_FID.png" width="150"><br>
-      <em> Generated with a fully classical model.</em>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align:center;">
-      <img src="images/F_04_L3_FID.png" width="150"><br>
-      <em>Generated with the EWGAN-GP.</em>
+      <img src="images/Classic_FID.png" width="200"><br>
+      <em>b)</em>
     </td>
     <td style="text-align:center;">
-      <img src="images/PQWGAN_FID.png" width="150"><br>
-      <em>Generated with SoA <a href="https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation">PQWGAN</a> model.</em>
+      <img src="images/F_04_L3_FID.png" width="200"><br>
+      <em>c)</em>
+    </td>
+    <td style="text-align:center;">
+      <img src="images/PQWGAN_FID.png" width="200"><br>
+      <em>d)</em>
     </td>
   </tr>
 </table>
