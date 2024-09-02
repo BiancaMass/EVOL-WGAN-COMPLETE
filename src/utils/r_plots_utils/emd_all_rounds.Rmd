@@ -1,0 +1,281 @@
+---
+title: "all emd evolution"
+author: "Bianca Massacci"
+date: "6/3/2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+```
+
+```{r}
+# List of data directories
+data_directories <- paste0("/Volumes/SANDISK32_2/final_round", 1:5)
+
+# Function to get CSV files for a given directory
+get_csv_files <- function(directory) {
+  csv_files <- list.files(path = directory, pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
+  csv_files <- csv_files[!grepl("/gan/", csv_files)]
+  csv_files <- csv_files[!grepl("metadata", csv_files)]
+  return(csv_files)
+}
+
+# Get CSV files for each directory and store them in a list
+data_list <- lapply(data_directories, get_csv_files)
+
+# Assign each dataset to a variable
+list2env(setNames(data_list, paste0("filepaths", 1:5)), .GlobalEnv)
+
+# Print the datasets
+#print(filepaths1)
+#print(filepaths2)
+#print(filepaths3)
+#print(filepaths4)
+#print(filepaths5)
+```
+
+
+
+```{r}
+# Function to process each CSV file and return a data frame
+process_csv_files <- function(filepaths, round) {
+  data_list <- list()
+  
+  for (csv_file in filepaths) {
+    folder_name <- strsplit(csv_file, "/")[[1]][5]
+    df <- read.csv(csv_file)
+    
+    best_actions <- df$`Best.Actions`
+    depth <- df$Depth
+    emd <- df$`Best.Fitness`
+    
+    data <- data.frame(round = round, folder = folder_name, depth = depth, best_action = best_actions, emd = emd)
+    data_list[[folder_name]] <- data
+  }
+  
+  return(do.call(rbind, data_list))
+}
+
+# Process files for each round and store them in a list
+datasets <- list(
+  process_csv_files(filepaths1, 1),
+  process_csv_files(filepaths2, 2),
+  process_csv_files(filepaths3, 3),
+  process_csv_files(filepaths4, 4),
+  process_csv_files(filepaths5, 5)
+)
+
+# Combine all datasets into one
+combined_data <- do.call(rbind, datasets)
+
+# Reset row names
+rownames(combined_data) <- NULL
+
+# Print the combined dataset
+print(combined_data)
+
+```
+
+```{r}
+head(combined_data)
+```
+
+```{r}
+combined_data <- combined_data %>%
+  mutate(folder = as.character(folder)) %>%
+  group_by(round, folder) %>%
+  mutate(time = row_number()) %>%
+  ungroup()
+```
+
+Exclude Round 1 (patches different size, different emd) and patches = 14 from round 2, to only keep patches = 28
+
+```{r}
+# From round 2:
+folders_to_exclude <- c(
+  "24_05_08_10_55_44", "24_05_08_13_37_23", "24_05_08_16_09_36",
+  "24_05_08_16_26_53", "24_05_08_16_29_33", "24_05_08_16_48_47",
+  "24_05_09_07_03_15", "24_05_09_07_03_46", "24_05_09_08_04_26"
+)
+```
+
+```{r}
+filtered_data <- combined_data %>%
+  filter(!(round == 2 & folder %in% folders_to_exclude)) %>%
+  filter(round != 1)
+```
+
+
+
+```{r}
+filtered_data %>%
+  ggplot(aes(x = time, y = emd, group = folder)) +
+  geom_line(size = 1, alpha = 0.5) +
+  labs(title = "Line Plot of EMD Values by Folder and Round",
+       x = "Time",
+       y = "EMD") +
+  theme_minimal() +
+  facet_wrap(~ round)
+  #scale_x_continuous(limits = c(0, 1000)) +
+  #scale_y_continuous(limits = c(1.75, 4))
+```
+
+
+
+```{r}
+filtered_data %>%
+  filter(round == 5) %>%
+  ggplot(aes(x = time, y = emd, group = folder)) +
+  geom_line(size = 1, alpha = 0.7) +
+  labs(title = "EMD values during evolution",
+       subtitle = "Stage 5",
+       x = "Time",
+       y = "EMD") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+
+```{r}
+filtered_data %>%
+  filter(round == 4) %>%
+  ggplot(aes(x = time, y = emd, group = folder)) +
+  geom_line(size = 1, alpha = 0.7) +
+  labs(title = "EMD values during evolution",
+       subtitle = "Stage 4",
+       x = "Time",
+       y = "EMD") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+```{r}
+filtered_data %>%
+  filter(round == 3) %>%
+  ggplot(aes(x = time, y = emd, group = folder)) +
+  geom_line(size = 1, alpha = 0.7) +
+  labs(title = "EMD values during evolution",
+       subtitle = "Stage 3",
+       x = "Time",
+       y = "EMD") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+
+```{r}
+filtered_data %>%
+  filter(round == 2) %>%
+  ggplot(aes(x = time, y = emd, group = folder)) +
+  geom_line(size = 1, alpha = 0.7) +
+  labs(title = "EMD values during evolution",
+       subtitle = "Stage 2 - Only 28 patches",
+       x = "Time",
+       y = "EMD") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 18), #face = "bold"
+    plot.subtitle = element_text(size = 14),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

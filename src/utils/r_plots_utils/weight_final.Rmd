@@ -1,0 +1,107 @@
+---
+title: "weight last"
+author: "Bianca Massacci"
+date: "6/6/2024"
+output: html_document
+---
+
+```{r}
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(car)
+```
+
+# Load the data
+```{r}
+data <- read_excel("/Users/bmassacci/main_folder/maastricht/academics/quantum_thesis/scripts/EVOL-WGAN-COMPLETE/output/weights_last.xlsx")
+data$COMBINATION <- paste(data$ADDITION, data$DELETION, data$SWAP, data$MUTATE, sep="_")
+data$visual_score <- factor(data$visual_score, levels = c("very poor", "poor", "medium"))
+
+```
+
+# Descriptive Statistics
+```{r}
+# Descriptive Statistics
+desc_stats <- data %>%
+  group_by(ADDITION, DELETION, SWAP, MUTATE) %>%
+  summarise(
+    mean_emd = mean(EMD), sd_emd = sd(EMD),
+    mean_fid = mean(FID), sd_fid = sd(FID)
+  )
+print(desc_stats)
+```
+
+# Correlation Analysis
+```{r}
+cor_matrix <- cor(data %>% select(ADDITION, DELETION, SWAP, MUTATE, EMD, FID))
+print(cor_matrix)
+```
+
+
+# ANOVA
+
+```{r}
+anova_emd <- aov(EMD ~ ADDITION + DELETION + SWAP + MUTATE, data = data)
+summary(anova_emd)
+```
+
+```{r}
+anova_fid <- aov(FID ~ ADDITION + DELETION + SWAP + MUTATE, data = data)
+summary(anova_fid)
+```
+
+
+# Regressiona analysis
+```{r}
+regression_emd <- lm(EMD ~ ADDITION + DELETION + SWAP + MUTATE + U_gates + CX_gates + params, data = data)
+summary(regression_emd)
+```
+
+```{r}
+regression_fid <- lm(FID ~ ADDITION + DELETION + SWAP + MUTATE + U_gates + CX_gates + params, data = data)
+summary(regression_fid)
+```
+
+# Visualize results
+```{r}
+ggplot(data, aes(x=ADDITION, y=EMD)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  ggtitle("EMD vs. ADDITION")
+```
+
+
+```{r}
+ggplot(data, aes(x=DELETION, y=EMD)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  ggtitle("EMD vs. DELETION")
+```
+
+
+```{r}
+ggplot(data, aes(x=SWAP, y=EMD)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  ggtitle("EMD vs. SWAP")
+```
+
+```{r}
+ggplot(data, aes(x=MUTATE, y=EMD)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  ggtitle("EMD vs. MUTATE")
+```
+
+
+
+
+
+
+
+
+
+
+
