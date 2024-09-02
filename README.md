@@ -4,11 +4,11 @@
 Hybrid Quantum-Classical System; Quantum GAN.
 
 ## Description
-This repository contains the code for the Thesis project _Evolutionary Optimization for Hybrid Quantum Image Generation
+This repository contains the code for the EWGAN-GP model, developed as part of the thesis project _Evolutionary Optimization for Hybrid Quantum Image Generation
 GAN_, submitted in partial fulfillment of the requirements for the degree of Master of Science of Data Science for
 Decision Making at the Department of Advanced Computing Sciences of Maastricht University.
 
-<a href="https://biancamass.github.io/MasterThesis/massaccibianca_master_thesis.pdf" target="_blank"> Click here to read the thesis</a>.
+<a href="https://biancamass.github.io/MasterThesis/massaccibianca_master_thesis.pdf" target="_blank"> Click here to read the complete thesis</a>.
 
 
 ### Abstract
@@ -27,21 +27,21 @@ Example results.
   <tr>
     <td style="text-align:center;">
       <img src="images/REAL_FID.png" width="300"><br>
-      <em>Original 0 and 1 digits images from the MNIST datasets.</em>
+      <em> Original from the MNIST datasets.</em>
     </td>
     <td style="text-align:center;">
       <img src="images/Classic_FID.png" width="300"><br>
-      <em>Images generated with a fully classical model.</em>
+      <em> Generated with a fully classical model.</em>
     </td>
   </tr>
   <tr>
     <td style="text-align:center;">
       <img src="images/F_04_L3_FID.png" width="300"><br>
-      <em>Images generated with the E-WGANGP (the model in this repository).</em>
+      <em>Generated with the EWGAN-GP.</em>
     </td>
     <td style="text-align:center;">
       <img src="images/PQWGAN_FID.png" width="300"><br>
-      <em>Images generated with SoA <a href="https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation">PQWGAN</a> model.</em>
+      <em>Generated with SoA <a href="https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation">PQWGAN</a> model.</em>
     </td>
   </tr>
 </table>
