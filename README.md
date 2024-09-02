@@ -19,7 +19,7 @@ digits 0 and 1. The results highlight the feasibility of using architectures tha
 hardware-efficient ansatz to generate images of comparable quality to the current state-of-the-art, and the 
 evolutionary algorithm’s potential in discovering superior configurations.
 
-## Example
+## Example 
 
 Example results. 
 
