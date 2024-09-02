@@ -8,6 +8,11 @@ This repository contains the code for the Thesis project _Evolutionary Optimizat
 GAN_, submitted in partial fulfillment of the requirements for the degree of Master of Science of Data Science for
 Decision Making at the Department of Advanced Computing Sciences of Maastricht University.
 
+View the thesis
+<a href="https://biancamass.github.io/MasterThesis/massaccibianca_master_thesis.pdf" target="_blank">here</a>.
+
+
+
 ### Abstract
 This work investigates the effectiveness of a quantum mutation-based evolutionary search  strategy for identifying
 better-performing ansatze, evaluated based on image quality and the number of required parameters.
