@@ -23,11 +23,29 @@ evolutionary algorithm’s potential in discovering superior configurations.
 
 Example results. 
 
-| ![Image 1](images/REAL_FID.png)                                   | ![Image 2](images/Classic_FID.png)             |
-|-------------------------------------------------------------------|------------------------------------------------|
-| Original 0 and 1 digits images from the MNIST datasets.           | Images generated with a fully classical model. |
-| ![Image 3](images/F_04_L3_FID.png)                                | ![Image 4](images/PQWGAN_FID.png)              |
-| Images generated with the E-WGANGP (the model in this repository) | Images generated with SoA [PQWGAN](https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation) model.        |
+<table>
+  <tr>
+    <td style="text-align:center;">
+      <img src="images/REAL_FID.png" width="300"><br>
+      <em>Original 0 and 1 digits images from the MNIST datasets.</em>
+    </td>
+    <td style="text-align:center;">
+      <img src="images/Classic_FID.png" width="300"><br>
+      <em>Images generated with a fully classical model.</em>
+    </td>
+  </tr>
+  <tr>
+    <td style="text-align:center;">
+      <img src="images/F_04_L3_FID.png" width="300"><br>
+      <em>Images generated with the E-WGANGP (the model in this repository).</em>
+    </td>
+    <td style="text-align:center;">
+      <img src="images/PQWGAN_FID.png" width="300"><br>
+      <em>Images generated with SoA <a href="https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation">PQWGAN</a> model.</em>
+    </td>
+  </tr>
+</table>
+
 
 ## Requirements
 
