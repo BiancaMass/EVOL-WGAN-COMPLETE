@@ -8,9 +8,7 @@ This repository contains the code for the Thesis project _Evolutionary Optimizat
 GAN_, submitted in partial fulfillment of the requirements for the degree of Master of Science of Data Science for
 Decision Making at the Department of Advanced Computing Sciences of Maastricht University.
 
-View the thesis
-<a href="https://biancamass.github.io/MasterThesis/massaccibianca_master_thesis.pdf" target="_blank">here</a>.
-
+<a href="https://biancamass.github.io/MasterThesis/massaccibianca_master_thesis.pdf" target="_blank"> Click here to read the thesis</a>.
 
 
 ### Abstract
@@ -21,8 +19,15 @@ digits 0 and 1. The results highlight the feasibility of using architectures tha
 hardware-efficient ansatz to generate images of comparable quality to the current state-of-the-art, and the 
 evolutionary algorithm’s potential in discovering superior configurations.
 
-## Visuals and examples
+## Example
 
+Example results. 
+
+| ![Image 1](images/REAL_FID.png)                                   | ![Image 2](images/Classic_FID.png)             |
+|-------------------------------------------------------------------|------------------------------------------------|
+| Original 0 and 1 digits images from the MNIST datasets.           | Images generated with a fully classical model. |
+| ![Image 3](images/F_04_L3_FID.png)                                | ![Image 4](images/PQWGAN_FID.png)              |
+| Images generated with the E-WGANGP (the model in this repository) | Images generated with SoA [PQWGAN](https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation) model.        |
 
 ## Requirements
 
