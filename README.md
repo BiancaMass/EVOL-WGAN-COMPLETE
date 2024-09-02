@@ -26,21 +26,21 @@ Example results.
 <table>
   <tr>
     <td style="text-align:center;">
-      <img src="images/REAL_FID.png" width="300"><br>
+      <img src="images/REAL_FID.png" width="150"><br>
       <em> Original from the MNIST datasets.</em>
     </td>
     <td style="text-align:center;">
-      <img src="images/Classic_FID.png" width="300"><br>
+      <img src="images/Classic_FID.png" width="150"><br>
       <em> Generated with a fully classical model.</em>
     </td>
   </tr>
   <tr>
     <td style="text-align:center;">
-      <img src="images/F_04_L3_FID.png" width="300"><br>
+      <img src="images/F_04_L3_FID.png" width="150"><br>
       <em>Generated with the EWGAN-GP.</em>
     </td>
     <td style="text-align:center;">
-      <img src="images/PQWGAN_FID.png" width="300"><br>
+      <img src="images/PQWGAN_FID.png" width="150"><br>
       <em>Generated with SoA <a href="https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation">PQWGAN</a> model.</em>
     </td>
   </tr>
