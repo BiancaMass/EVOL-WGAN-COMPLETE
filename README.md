@@ -54,7 +54,9 @@ d) Images generated with State of the Art [PQWGAN](https://www.researchgate.net/
 </table>
 
 
-## Requirements
+## Usage
+
+### Requirements
 
 - **Python Version:** 3.10
 
@@ -67,7 +69,7 @@ d) Images generated with State of the Art [PQWGAN](https://www.researchgate.net/
 - `torch==2.2.2`
 - `seaborn==0.13.2`
 
-#### Installation
+### Installation
 
 It is recommended to use a virtual environment for managing dependencies. To set up and activate a virtual environment:
 ```
@@ -80,21 +82,56 @@ To install the required libraries, run:
 pip install -r requirements.txt
 ```
 
-## Usage
+### Assumptions
+
+The code assumes the following:
+- Square images.
+- Each patch is assumed to have a width equal to the image width.
+- Patch width is assumed to be 28 (width of the whole image).
+
+*Note:* This choice is based on findings from the [PQWGAN paper](https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation), where horizontal patches were observed to work well for the GAN.
+
 
 ### Configuration
 
+To run with the values of the basic experiment (binary MNIST) with default values run the following command
+(note: hyperparameters values are automatically set, to edit, refer to the code):\
+`python train.py -cl "01" -d "mnist" -p 28 -l 8 -q 7 -b 25 -o "./output/231023_1953" -c 0 -ps 
+1 28 `
 
-## Sources
+Where
+
+| Input     | Description                             |
+|-----------|-----------------------------------------|
+| -cl       | `string`: name of the classes in training set e.g., "01" will be digits 0 and 1 in MNIST |
+| -d        | `string`: training dataset (see folder structure) |
+| -p        | `int`: number of patches to divide the images for training |
+| -l        | `int`: number of layers |
+| -q        | `int`: number of qubits (excl. ancilla) |
+| -b        | `int`: batch size |
+| -o        | `string`: destination dir for output |
+| -c        | `bool`: whether to have  checkpoint|
+| -rn       | `bool` : if True, draw latent vector from normal distribution. Else, from uniform. |
+| -ps       | `int` `int`: shape of the image patch (for QG) |
+
+Note: the output folder will be automatically named as: 
+NumberOfClasses_NumberofPatches_NumberOfLayers_BatchSize, according to the provided parameters. 
+If specified in the parameters, randn will be added, as well as patch shape.
+
+## Credits and Acknowledgements
 
 The main source for how to structure a GAN and WGAN, including architecture structuring, and 
 gradient penalty function, was taken from [Erik Linder-Norén's](https://github.com/eriklindernoren) GitHub repo of
 PyTorch implementations of Generative Adversarial Networks: [PyTorch-GAN](https://github.com/eriklindernoren/PyTorch-GAN), licensed under MIT license. 
 
-**Insert link to License file**
+This work is based on the Patch Quantum Wasserstein GAN (PQWGAN), introduced by Tsang et al. in the paper _Hybrid quantum-classical generative
+adversarial network for high resolution image generation_, available [here](https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation). 
 
-- Idea for patch: patch paper
-- 
+This work builds on the PQWGAN work, by introducing an evolutionary algorithm for ansatz search, aimed at identifying
+ansatz architectures tailored to a specific application, in this case generation of digits images, therefore taking a 
+step further from the more commonly employed application-agnostic hardware-efficient ansatz.
+My thanks go to Vincenzo Lipardi for the valuable ideas, brainstorming sessions, and support during the development and testing of this algorithm,
+and to Menica DiBenedetto for her guidance, insights, and ongoing encouragement.
 
 
 Note: I assume square images
