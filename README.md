@@ -23,13 +23,13 @@ evolutionary algorithm’s potential in discovering superior configurations.
 
 Below a plot of original data and generated images with various models:
 
-a) Original images from the MNIST datasets.
+a) Original 0 and 1 digit images from the MNIST datasets.
 
 b) Images generated with a fully classical model.
 
 c) Images generated with the EWGAN-GP (the model in this repository).
 
-d) Images generated with SoA [PQWGAN](https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation) model.
+d) Images generated with State of the Art [PQWGAN](https://www.researchgate.net/publication/366528143_Hybrid_Quantum-Classical_Generative_Adversarial_Network_for_High_Resolution_Image_Generation) model.
 
 
 <table>

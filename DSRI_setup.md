@@ -1,4 +1,6 @@
 # Instructions to run B-CQWGAN-Evol on the DSRI infrastructure
+Instruction to run the script on Maastricht University [Data Science Research Infrastructure](https://dsri.maastrichtuniversity.nl/docs/
+)'s servers.  
 
 ## Using a set-up script
 
