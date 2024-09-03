@@ -122,14 +122,4 @@ This work builds on the PQWGAN work, by introducing an evolutionary algorithm fo
 ansatz architectures tailored to a specific application, in this case generation of digits images, therefore taking a 
 step further from the more commonly employed application-agnostic hardware-efficient ansatz.
 My thanks go to Vincenzo Lipardi for the valuable ideas, brainstorming sessions, and support during the development and testing of this algorithm,
-and to Menica DiBenedetto for her guidance, insights, and ongoing encouragement.
-
-
-Note: I assume square images
-Note: I assume each patch has width = image_width
-
-Note: patch width is assumed  to be 28 (width of the whole image)
-This choice is based on finding of the PQWGAN paper, where they observed that
-horizontal patches worked well for the structure.
-
-
+and to Menica Dibenedetto for her guidance, insights, and ongoing encouragement.
