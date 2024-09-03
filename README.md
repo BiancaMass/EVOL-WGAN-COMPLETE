@@ -103,10 +103,11 @@ This will automatically do the following:
 2. Run the evolutionary algorithm searching for the best ansatz structure for the application.
 3. Use the best found ansatz as the generator in a hybrid quantum GAN (classical discriminator).
 4. Train the GAN on the training data.
-5. Save the output.
+5. Save the output in an `\output` folder.
 
 Refer to the [thesis document](https://biancamass.github.io/MasterThesis/massaccibianca_master_thesis.pdf) 
 for detailed information on the functioning of the algorithm.
+
 
 ## Credits and Acknowledgements
 
