@@ -94,29 +94,19 @@ The code assumes the following:
 
 ### Configuration
 
-To run with the values of the basic experiment (binary MNIST) with default values run the following command
-(note: hyperparameters values are automatically set, to edit, refer to the code):\
-`python train.py -cl "01" -d "mnist" -p 28 -l 8 -q 7 -b 25 -o "./output/231023_1953" -c 0 -ps 
-1 28 `
+To run the pipeline with default values, simply change the directory to this project's and run the command:
 
-Where
+```python main.py```
 
-| Input     | Description                             |
-|-----------|-----------------------------------------|
-| -cl       | `string`: name of the classes in training set e.g., "01" will be digits 0 and 1 in MNIST |
-| -d        | `string`: training dataset (see folder structure) |
-| -p        | `int`: number of patches to divide the images for training |
-| -l        | `int`: number of layers |
-| -q        | `int`: number of qubits (excl. ancilla) |
-| -b        | `int`: batch size |
-| -o        | `string`: destination dir for output |
-| -c        | `bool`: whether to have  checkpoint|
-| -rn       | `bool` : if True, draw latent vector from normal distribution. Else, from uniform. |
-| -ps       | `int` `int`: shape of the image patch (for QG) |
+This will automatically do the following:
+1. Download the dataset of digits 0 and 1 in an `\input` folder.
+2. Run the evolutionary algorithm searching for the best ansatz structure for the application.
+3. Use the best found ansatz as the generator in a hybrid quantum GAN (classical discriminator).
+4. Train the GAN on the training data.
+5. Save the output.
 
-Note: the output folder will be automatically named as: 
-NumberOfClasses_NumberofPatches_NumberOfLayers_BatchSize, according to the provided parameters. 
-If specified in the parameters, randn will be added, as well as patch shape.
+Refer to the [thesis document](https://biancamass.github.io/MasterThesis/massaccibianca_master_thesis.pdf) 
+for detailed information on the functioning of the algorithm.
 
 ## Credits and Acknowledgements
 
